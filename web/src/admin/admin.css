@@ -1,0 +1,31 @@
+/* CSS do painel: gerado só a partir do código do painel e do compartilhado. */
+@import 'tailwindcss' source(none);
+@source '../admin';
+@source '../shared';
+@import '../shared/theme.css';
+
+body {
+  background: #f4f6f9;
+  color: #0f172a;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 0.45;
+  cursor: pointer;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 14mm 12mm;
+  }
+  html,
+  body,
+  #root {
+    height: auto !important;
+    background: #fff !important;
+  }
+  .print-avoid-break {
+    break-inside: avoid;
+  }
+}

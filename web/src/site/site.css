@@ -1,0 +1,12 @@
+/* O site público só gera CSS a partir do próprio código e do código compartilhado. */
+@import 'tailwindcss' source(none);
+@source '../site';
+@source '../shared';
+@import '../shared/theme.css';
+
+body {
+  background: #e6edf2;
+  color: #0f172a;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
