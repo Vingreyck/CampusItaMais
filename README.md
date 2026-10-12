@@ -11,9 +11,18 @@ Só a planta 3D e o filtro, como pedido:
 - **Clique num projeto**: a câmera voa até o local, um feixe de luz marca o ponto e abre o painel com descrição, progresso, **checklist das subtarefas** (com datas), fotos e documentos públicos.
 - Link direto por projeto: `/projeto/<id>` (botão “Compartilhar”).
 
-### Painel de gestão (`/admin`) — aplicativo separado, sem login
-- **Quadro** com as colunas *Ideias → A fazer → Em andamento → Em análise → Concluído* (arrastar e soltar). Cada coluna aparece no site com a cor do seu grupo.
-- **Projeto**: título, descrição, categoria, responsável (nome/e-mail), datas de início/previsão/conclusão, visibilidade no site, **subtarefas** (descrição, responsável, e-mail, prazo, data de conclusão), **documentos** (PDF, fotos, planilhas; cada um público ou privado; foto de capa) e histórico.
+### Painel de gestão (`/admin`) — aplicativo separado, sem login, no estilo do Jira
+- **Quadro** com as colunas *Ideias → A fazer → Em andamento → Em análise → Concluído*. Os cartões se movem arrastando com o mouse ou pelo teclado (Espaço, setas, Espaço). Cada coluna aparece no site com a cor do seu grupo: Ideias e A fazer em 🔴, Em andamento e Em análise em 🟡, Concluído em 🟢.
+- **Cartões** com chave `ITA-n`, prioridade, progresso das subtarefas, anexos, prazo (vermelho se atrasado), responsável e se está no mapa. O menu “…” do cartão traz: abrir, copiar link do site, posicionar no mapa, mover para o topo/fim e excluir.
+- **Criar**: diálogo completo (atalho `C`, opção “Criar outro”) ou criação rápida no pé de cada coluna.
+- **Filtros rápidos**: busca (atalho `/`), responsável (avatares), categoria, “Sem local no mapa”, “Ocultos do site”.
+- **Projeto** (abre em `/admin/tarefa/ITA-n`):
+  - Título e descrição (a descrição aparece no site).
+  - **Subtarefas**: checklist reordenável por arraste, com descrição, responsável, e-mail, prazo e data em que foi feita.
+  - **Documentos**: PDF, fotos e planilhas, cada um público ou privado; uma foto pode ser a capa.
+  - **Detalhes**: responsável, prioridade, categoria e relator.
+  - **Datas**: início, previsão e conclusão (preenchidas sozinhas ao mover o cartão).
+  - **Atividade** com abas **Comentários** (atalho `M`; `Ctrl+Enter` salva) e **Histórico** (cada alteração registrada).
 - **E-mail com Enter**: em projetos e subtarefas, digite um e-mail e pressione Enter. A pessoa recebe a tarefa na hora.
 - **Mapa do campus**: arraste a bolinha de um projeto da lista até o ponto do campus; no mapa, arraste as bolinhas para ajustar (vista “Planta” ou “3D”).
 - **Relatório** por período (com atalhos) pronto para **imprimir/salvar em PDF**: projetos e etapas concluídos, em andamento, novas ideias e histórico de ações.
@@ -60,9 +69,18 @@ Para gerar chaves aleatórias:
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
 
+## Testes
+
+```bash
+npm test            # API: 47 cenários (porteiro do painel, quadro, subtarefas, documentos, e-mail, mapa, relatório, acessos)
+npm run test:e2e    # navegador: 18 cenários no build de produção (site público e painel, como uma pessoa usaria)
+```
+
+No GitHub, os dois rodam sozinhos a cada push (`.github/workflows/ci.yml`).
+
 ## Deploy no Railway
 
-1. Serviço a partir deste repositório (usa o `Dockerfile` e o `railway.json`).
+1. **Um único serviço** a partir deste repositório, com **Root Directory vazio**: ele usa o `Dockerfile` e o `railway.json` da raiz. Não divida em serviços `web` e `server`. Com o repositório conectado, cada push no `main` faz deploy, e as migrações do banco rodam sozinhas.
 2. Adicione um **PostgreSQL** e defina `DATABASE_URL=${{Postgres.DATABASE_URL}}`.
 3. Adicione um **volume** montado em `/data` e defina `DATA_DIR=/data`.
 4. Variáveis: `JWT_SECRET`, `ADMIN_ACCESS_KEY`, `ADMIN_NAME`, `MAIL_FROM` e a chave do provedor de e-mail (`RESEND_API_KEY` ou `BREVO_API_KEY`). Opcional: `SEED_DEMO=true` para criar projetos de demonstração.

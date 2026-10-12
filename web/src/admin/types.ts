@@ -1,5 +1,7 @@
 import type { Status } from '@shared/types';
 
+export type Priority = 'mais_alta' | 'alta' | 'media' | 'baixa' | 'mais_baixa';
+
 export interface Me {
   id: string;
   name: string;
@@ -14,6 +16,7 @@ export interface TaskSummary {
   description: string;
   status: Status;
   position: number;
+  priority: Priority;
   category: string;
   responsibleName: string;
   responsibleEmail: string;
@@ -67,6 +70,15 @@ export interface NotificationItem {
   sentByName: string | null;
 }
 
+export interface CommentItem {
+  id: string;
+  authorId: string | null;
+  authorName: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Activity {
   id: string;
   type: string;
@@ -80,6 +92,7 @@ export interface TaskDetail extends TaskSummary {
   subtasks: Subtask[];
   documents: DocumentItem[];
   notifications: NotificationItem[];
+  comments: CommentItem[];
   activities: Activity[];
 }
 

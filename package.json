@@ -14,9 +14,12 @@
     "build": "npm run build -w web && npm run build -w server",
     "start": "npm run start -w server",
     "typecheck": "npm run typecheck -w server && npm run typecheck -w web",
-    "db:generate": "npm run db:generate -w server"
+    "db:generate": "npm run db:generate -w server",
+    "test": "npm run test -w server",
+    "test:e2e": "npm run build && node -e \"require('fs').rmSync('.data-e2e',{recursive:true,force:true})\" && playwright test -c e2e"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "concurrently": "^9.2.1"
   }
 }

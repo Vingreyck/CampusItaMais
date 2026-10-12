@@ -81,7 +81,7 @@ adminAccessRouter.post('/acessos', async (req, res) => {
   const data = z
     .object({
       name: z.string().trim().min(2, 'Informe o nome da pessoa').max(120),
-      email: z.union([z.literal(''), z.email('E-mail inválido').trim().toLowerCase()]).default(''),
+      email: z.string().trim().toLowerCase().pipe(z.union([z.literal(''), z.email('E-mail inválido')])).default(''),
       sendEmail: z.boolean().default(false),
     })
     .parse(req.body);

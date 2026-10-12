@@ -43,6 +43,8 @@ export const tasks = pgTable(
     // ideia | a_fazer | em_andamento | em_analise | concluido
     status: text('status').notNull().default('ideia'),
     position: doublePrecision('position').notNull().default(0),
+    // mais_alta | alta | media | baixa | mais_baixa (mesma escala do Jira)
+    priority: text('priority').notNull().default('media'),
     category: text('category').notNull().default(''),
     responsibleName: text('responsible_name').notNull().default(''),
     responsibleEmail: text('responsible_email').notNull().default(''),
@@ -135,6 +137,28 @@ export const activities = pgTable(
   },
   (t) => [index('activities_task_idx').on(t.taskId), index('activities_created_idx').on(t.createdAt)],
 );
+
+export const comments = pgTable(
+  'comments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    authorId: uuid('author_id').references(() => users.id, { onDelete: 'set null' }),
+    authorName: text('author_name').notNull().default(''),
+    body: text('body').notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('comments_task_idx').on(t.taskId)],
+);
+
+/** Pares chave/valor internos (ex.: se a demonstração já foi criada uma vez). */
+export const appMeta = pgTable('app_meta', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+});
 
 export type TaskRow = typeof tasks.$inferSelect;
 export type SubtaskRow = typeof subtasks.$inferSelect;

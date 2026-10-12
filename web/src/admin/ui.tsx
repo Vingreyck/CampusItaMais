@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useEffect, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import clsx from 'clsx';
 import { LoaderCircle } from 'lucide-react';
 import { initials } from '@shared/format';
@@ -143,6 +143,85 @@ export function Avatar({ name, size = 'sm' }: { name: string; size?: 'xs' | 'sm'
 
 export function Spinner({ className }: { className?: string }) {
   return <LoaderCircle className={clsx('animate-spin text-slate-400', className ?? 'size-5')} />;
+}
+
+export interface MenuItem {
+  label: string;
+  icon?: ReactNode;
+  onSelect: () => void;
+  danger?: boolean;
+  hidden?: boolean;
+}
+
+/** Menu suspenso "…" (fecha ao clicar fora ou com Esc). */
+export function Menu({ items, label, trigger, align = 'right' }: { items: MenuItem[]; label: string; trigger: ReactNode; align?: 'left' | 'right' }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }, [open]);
+  return (
+    <div ref={ref} className="relative" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        aria-label={label}
+        title={label}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="grid size-7 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+      >
+        {trigger}
+      </button>
+      {open && (
+        <div
+          role="menu"
+          className={clsx(
+            'absolute top-full z-50 mt-1 min-w-[200px] overflow-hidden rounded-xl bg-white py-1 shadow-xl ring-1 ring-slate-200',
+            align === 'right' ? 'right-0' : 'left-0',
+          )}
+        >
+          {items
+            .filter((i) => !i.hidden)
+            .map((item) => (
+              <button
+                key={item.label}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false);
+                  item.onSelect();
+                }}
+                className={clsx(
+                  'flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition',
+                  item.danger ? 'text-rose-600 hover:bg-rose-50' : 'text-slate-700 hover:bg-slate-50',
+                )}
+              >
+                <span className="text-slate-400 [&>svg]:size-4">{item.icon}</span>
+                {item.label}
+              </button>
+            ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function Kbd({ children }: { children: ReactNode }) {
+  return <kbd className="rounded border border-slate-300 bg-white px-1.5 py-0.5 font-sans text-[10px] font-semibold text-slate-500 shadow-[0_1px_0_rgb(203_213_225)]">{children}</kbd>;
 }
 
 export function SectionTitle({ icon, children, aside }: { icon?: ReactNode; children: ReactNode; aside?: ReactNode }) {

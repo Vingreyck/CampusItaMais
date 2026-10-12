@@ -1,6 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { db } from './db';
-import { accessKeys, activities, subtasks, tasks } from './db/schema';
+import { accessKeys, activities, appMeta, subtasks, tasks } from './db/schema';
 import { hashToken } from './auth';
 import { env } from './env';
 import type { Status } from './util';
@@ -248,9 +248,15 @@ const DEMO: DemoTask[] = [
 ];
 
 export async function seedDemo() {
-  if (!env.seedDemo) return;
+  // A demonstração é criada uma única vez na vida do banco: depois de removida pelo painel, não volta.
+  const [seeded] = await db.select().from(appMeta).where(eq(appMeta.key, 'demo_seeded'));
+  if (seeded) return;
   const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(tasks);
-  if (Number(count) > 0) return;
+  if (Number(count) > 0) {
+    await db.insert(appMeta).values({ key: 'demo_seeded', value: 'dados-existentes' }).onConflictDoNothing();
+    return;
+  }
+  if (!env.seedDemo) return;
 
   let position = 0;
   for (const d of DEMO) {
@@ -295,5 +301,6 @@ export async function seedDemo() {
       createdAt,
     });
   }
+  await db.insert(appMeta).values({ key: 'demo_seeded', value: new Date().toISOString() }).onConflictDoNothing();
   console.log(`[seed] ${DEMO.length} projetos de demonstração criados`);
 }

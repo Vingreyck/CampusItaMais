@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
@@ -25,6 +25,8 @@ export function MapPage() {
   const [search, setSearch] = useState('');
   const [dragOver, setDragOver] = useState(false);
   const projector = useRef<Projector | null>(null);
+  const [mapReady, setMapReady] = useState(false);
+  const markReady = useCallback(() => setMapReady(true), []);
 
   const all = useMemo(() => tasks ?? [], [tasks]);
   const selected = all.find((t) => t.id === selectedId) ?? null;
@@ -78,8 +80,12 @@ export function MapPage() {
     e.preventDefault();
     setDragOver(false);
     const id = e.dataTransfer.getData(DRAG_TYPE) || e.dataTransfer.getData('text/plain');
+    if (!id || !all.some((t) => t.id === id)) return;
     const point = projector.current?.(e.clientX, e.clientY);
-    if (!id || !point || !all.some((t) => t.id === id)) return;
+    if (!point) {
+      toast.info('O mapa ainda está carregando — solte a bolinha de novo em instantes.');
+      return;
+    }
     const { x, z } = clampToCampus(point.x, point.z);
     place.mutate({ id, x, z });
     setSelectedId(id);
@@ -107,6 +113,7 @@ export function MapPage() {
       </aside>
 
       <div
+        data-map-ready={mapReady}
         className="relative min-h-0 flex-1 bg-[radial-gradient(130%_90%_at_50%_0%,#f9fbfd_0%,#e8eff3_55%,#dde6eb_100%)]"
         onDragOver={(e) => {
           if (![...e.dataTransfer.types].includes(DRAG_TYPE)) return;
@@ -126,6 +133,7 @@ export function MapPage() {
           editable
           onMarkerMove={(id, x, z) => place.mutate({ id, x, z })}
           projectorRef={projector}
+          onReady={markReady}
           view={view}
           dimOthers={false}
           effects={false}
@@ -168,7 +176,7 @@ export function MapPage() {
                   <Eye className="size-4" />
                 </a>
               )}
-              <Button size="sm" variant="secondary" onClick={() => navigate(`/tarefa/${selected.id}`)}>
+              <Button size="sm" variant="secondary" onClick={() => navigate(`/tarefa/ITA-${selected.code}`)}>
                 <SquareArrowOutUpRight className="size-3.5" /> Abrir
               </Button>
             </motion.div>

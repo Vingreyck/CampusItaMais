@@ -1,6 +1,6 @@
 import { asc, desc, eq } from 'drizzle-orm';
 import { db } from './db';
-import { accessKeys as users, activities, documents, notifications, subtasks, tasks, type SubtaskRow, type TaskRow } from './db/schema';
+import { accessKeys as users, activities, comments, documents, notifications, subtasks, tasks, type SubtaskRow, type TaskRow } from './db/schema';
 import { serializeDocument } from './uploads';
 import { notFound } from './util';
 
@@ -19,6 +19,10 @@ export function serializeSubtask(s: SubtaskRow) {
   };
 }
 
+export function serializeComment(c: typeof comments.$inferSelect) {
+  return { id: c.id, authorId: c.authorId, authorName: c.authorName, body: c.body, createdAt: c.createdAt, updatedAt: c.updatedAt };
+}
+
 export function serializeTask(t: TaskRow, counts?: { subtaskTotal: number; subtaskDone: number; documentCount: number }) {
   return {
     id: t.id,
@@ -27,6 +31,7 @@ export function serializeTask(t: TaskRow, counts?: { subtaskTotal: number; subta
     description: t.description,
     status: t.status,
     position: t.position,
+    priority: t.priority,
     category: t.category,
     responsibleName: t.responsibleName,
     responsibleEmail: t.responsibleEmail,
@@ -71,7 +76,7 @@ export async function loadTaskDetail(id: string) {
   const [t] = await db.select().from(tasks).where(eq(tasks.id, id));
   if (!t) throw notFound('Tarefa');
 
-  const [subs, docs, notes, acts, creator] = await Promise.all([
+  const [subs, docs, notes, acts, creator, cmts] = await Promise.all([
     db.select().from(subtasks).where(eq(subtasks.taskId, id)).orderBy(asc(subtasks.position), asc(subtasks.createdAt)),
     db.select().from(documents).where(eq(documents.taskId, id)).orderBy(desc(documents.createdAt)),
     db
@@ -93,10 +98,11 @@ export async function loadTaskDetail(id: string) {
       .from(activities)
       .where(eq(activities.taskId, id))
       .orderBy(desc(activities.createdAt))
-      .limit(100),
+      .limit(300),
     t.createdById
       ? db.select({ name: users.name }).from(users).where(eq(users.id, t.createdById))
       : Promise.resolve([]),
+    db.select().from(comments).where(eq(comments.taskId, id)).orderBy(desc(comments.createdAt)),
   ]);
 
   return {
@@ -109,6 +115,7 @@ export async function loadTaskDetail(id: string) {
     subtasks: subs.map(serializeSubtask),
     documents: docs.map(serializeDocument),
     notifications: notes,
+    comments: cmts.map(serializeComment),
     activities: acts.map((a) => ({
       id: a.id,
       type: a.type,

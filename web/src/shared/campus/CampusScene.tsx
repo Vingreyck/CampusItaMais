@@ -29,6 +29,8 @@ interface CampusSceneProps {
   editable?: boolean;
   onMarkerMove?: (id: string, x: number, z: number) => void;
   projectorRef?: RefObject<Projector | null>;
+  /** Chamado quando a cena já consegue converter pontos da tela em pontos do campus. */
+  onReady?: () => void;
   view?: 'orbit' | 'top';
   /** Desloca o enquadramento para o lado livre da tela quando há um painel aberto. */
   panelSide?: 'right' | 'bottom' | null;
@@ -51,6 +53,7 @@ export function CampusScene({
   editable = false,
   onMarkerMove,
   projectorRef,
+  onReady,
   view = 'orbit',
   panelSide = null,
   autoRotate = false,
@@ -121,7 +124,7 @@ export function CampusScene({
           dollyToCursor
         />
         <CameraRig focus={focus} view={view} panelSide={panelSide} autoRotate={autoRotate} intro={intro} />
-        {projectorRef && <ProjectorBridge projectorRef={projectorRef} />}
+        {projectorRef && <ProjectorBridge projectorRef={projectorRef} onReady={onReady} />}
 
         {effects && (
           <EffectComposer multisampling={4}>
@@ -246,7 +249,7 @@ function CameraRig({
   return null;
 }
 
-function ProjectorBridge({ projectorRef }: { projectorRef: RefObject<Projector | null> }) {
+function ProjectorBridge({ projectorRef, onReady }: { projectorRef: RefObject<Projector | null>; onReady?: () => void }) {
   const camera = useThree((s) => s.camera);
   const gl = useThree((s) => s.gl);
   useEffect(() => {
@@ -260,9 +263,10 @@ function ProjectorBridge({ projectorRef }: { projectorRef: RefObject<Projector |
       raycaster.setFromCamera(ndc, camera);
       return raycaster.ray.intersectPlane(plane, out) ? { x: out.x, z: out.z } : null;
     };
+    onReady?.();
     return () => {
       (projectorRef as { current: Projector | null }).current = null;
     };
-  }, [camera, gl, projectorRef]);
+  }, [camera, gl, projectorRef, onReady]);
   return null;
 }

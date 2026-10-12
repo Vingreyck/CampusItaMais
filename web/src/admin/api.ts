@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { request } from '@shared/http';
-import type { AccessKey, DocumentItem, Me, NotificationItem, Report, Subtask, TaskDetail, TaskSummary } from './types';
+import type { AccessKey, CommentItem, DocumentItem, Me, NotificationItem, Report, Subtask, TaskDetail, TaskSummary } from './types';
 
 // Cabeçalho exigido pelo servidor em toda alteração (proteção contra CSRF).
 const ADMIN_HEADERS = { 'X-CIM-Admin': '1' };
@@ -14,6 +14,7 @@ export type TaskPatch = Partial<
     | 'description'
     | 'status'
     | 'position'
+    | 'priority'
     | 'category'
     | 'responsibleName'
     | 'responsibleEmail'
@@ -43,6 +44,10 @@ export const api = {
   createSubtask: (taskId: string, data: SubtaskPatch & { title: string }) => call<Subtask>('POST', `/tasks/${taskId}/subtasks`, data),
   updateSubtask: (id: string, data: SubtaskPatch) => call<Subtask>('PATCH', `/subtasks/${id}`, data),
   deleteSubtask: (id: string) => call('DELETE', `/subtasks/${id}`),
+
+  addComment: (taskId: string, body: string) => call<CommentItem>('POST', `/tasks/${taskId}/comments`, { body }),
+  editComment: (id: string, body: string) => call<CommentItem>('PATCH', `/comments/${id}`, { body }),
+  deleteComment: (id: string) => call('DELETE', `/comments/${id}`),
 
   uploadDocuments: (taskId: string, files: File[]) => {
     const form = new FormData();

@@ -7,8 +7,9 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 export const SERVER_ROOT = path.resolve(here, '..');
 const REPO_ROOT = path.resolve(SERVER_ROOT, '..');
 
+// Os testes automatizados definem o próprio ambiente e não leem o .env local.
 const envFile = path.join(REPO_ROOT, '.env');
-if (fs.existsSync(envFile)) process.loadEnvFile(envFile);
+if (!process.env.CIM_SKIP_DOTENV && fs.existsSync(envFile)) process.loadEnvFile(envFile);
 
 const e = process.env;
 const isProd = e.NODE_ENV === 'production' || !!e.RAILWAY_ENVIRONMENT;

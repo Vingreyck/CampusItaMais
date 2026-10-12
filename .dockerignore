@@ -7,3 +7,6 @@ node_modules
 .claude
 *.log
 *.local
+e2e
+test-results
+playwright-report

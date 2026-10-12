@@ -3,7 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
 import clsx from 'clsx';
 import { toast } from 'sonner';
-import { Check, ChevronDown, ListChecks, Plus, Trash2 } from 'lucide-react';
+import { DragDropContext, Draggable, Droppable, type DropResult } from '@hello-pangea/dnd';
+import { Check, ChevronDown, GripVertical, ListChecks, Plus, Trash2 } from 'lucide-react';
 import { formatDayShort, pct } from '@shared/format';
 import { api, useRefreshTask, type SubtaskPatch } from './api';
 import { EmailNotifier } from './EmailNotifier';
@@ -40,6 +41,17 @@ export function Subtasks({ task }: { task: TaskDetail }) {
     onSettled: refresh,
   });
 
+  // Reordenação por arraste: nova posição entre os vizinhos (aparece nessa ordem no site).
+  const onDragEnd = ({ source, destination, draggableId }: DropResult) => {
+    if (!destination || destination.index === source.index) return;
+    const rest = task.subtasks.filter((s) => s.id !== draggableId);
+    const prev = rest[destination.index - 1]?.position;
+    const next = rest[destination.index]?.position;
+    const position = prev == null ? (next ?? 1024) / 2 : next == null ? prev + 1024 : (prev + next) / 2;
+    setSubtasks((subs) => subs.map((s) => (s.id === draggableId ? { ...s, position } : s)).sort((a, b) => a.position - b.position));
+    update.mutate({ id: draggableId, data: { position } });
+  };
+
   const done = task.subtasks.filter((s) => s.done).length;
   const total = task.subtasks.length;
 
@@ -54,16 +66,24 @@ export function Subtasks({ task }: { task: TaskDetail }) {
 
       {total > 0 && (
         <div className="mb-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
-          <motion.div className="h-full rounded-full bg-emerald-500" animate={{ width: `${pct(done, total)}%` }} />
+          <motion.div className="h-full rounded-full bg-emerald-500" initial={{ width: 0 }} animate={{ width: `${pct(done, total)}%` }} />
         </div>
       )}
 
-      <ul className="space-y-1">
-        {task.subtasks.map((s) => {
+      <DragDropContext onDragEnd={onDragEnd}>
+        <Droppable droppableId="subtarefas">
+          {(dp) => (
+      <ul ref={dp.innerRef} {...dp.droppableProps} className="space-y-1">
+        {task.subtasks.map((s, index) => {
           const open = openId === s.id;
           return (
-            <li key={s.id} className={clsx('rounded-xl transition', open ? 'bg-slate-50 ring-1 ring-slate-200' : 'hover:bg-slate-50')}>
+            <Draggable key={s.id} draggableId={s.id} index={index}>
+              {(drag, snap) => (
+            <li ref={drag.innerRef} {...drag.draggableProps} className={clsx('group/sub rounded-xl transition', snap.isDragging ? 'bg-white shadow-lg ring-1 ring-sky-200' : open ? 'bg-slate-50 ring-1 ring-slate-200' : 'hover:bg-slate-50')}>
               <div className="flex items-center gap-3 px-2.5 py-1.5">
+                <span {...drag.dragHandleProps} aria-label="Arrastar para reordenar" title="Arrastar para reordenar" className="-mr-2 -ml-1.5 cursor-grab text-slate-300 opacity-0 transition group-hover/sub:opacity-100 hover:text-slate-500">
+                  <GripVertical className="size-4" />
+                </span>
                 <button
                   type="button"
                   onClick={() => update.mutate({ id: s.id, data: { done: !s.done } })}
@@ -144,9 +164,15 @@ export function Subtasks({ task }: { task: TaskDetail }) {
                 )}
               </AnimatePresence>
             </li>
+              )}
+            </Draggable>
           );
         })}
+        {dp.placeholder}
       </ul>
+          )}
+        </Droppable>
+      </DragDropContext>
 
       <form
         className="mt-1 flex items-center gap-3 rounded-xl px-2.5 py-1.5 transition focus-within:bg-slate-50"

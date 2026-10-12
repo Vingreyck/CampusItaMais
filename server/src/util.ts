@@ -32,6 +32,16 @@ export const PUBLIC_GROUP: Record<Status, PublicGroup> = {
 
 export const statusLabel = (s: string) => STATUS_LABEL[s as Status] ?? s;
 
+export const PRIORITIES = ['mais_alta', 'alta', 'media', 'baixa', 'mais_baixa'] as const;
+export type Priority = (typeof PRIORITIES)[number];
+export const PRIORITY_LABEL: Record<Priority, string> = {
+  mais_alta: 'Altíssima',
+  alta: 'Alta',
+  media: 'Média',
+  baixa: 'Baixa',
+  mais_baixa: 'Mínima',
+};
+
 /** Data de hoje (YYYY-MM-DD) no fuso de Sergipe. */
 export function todayLocal(): string {
   return new Intl.DateTimeFormat('en-CA', {
