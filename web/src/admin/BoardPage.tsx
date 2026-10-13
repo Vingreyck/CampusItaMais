@@ -19,6 +19,7 @@ import {
   SquareArrowOutUpRight,
   Sparkles,
   Trash2,
+  Upload,
   X,
 } from 'lucide-react';
 import { GROUPS, STATUSES, STATUS_LABEL } from '@shared/status';
@@ -26,6 +27,7 @@ import { formatDayShort, pct, todayISO } from '@shared/format';
 import type { Status } from '@shared/types';
 import { api } from './api';
 import { CreateTaskDialog } from './CreateTaskDialog';
+import { ImportJiraDialog } from './ImportJiraDialog';
 import { PriorityIcon } from './priority';
 import type { TaskSummary } from './types';
 import { Avatar, Button, Kbd, Menu, Spinner, inputCls } from './ui';
@@ -49,6 +51,7 @@ export function BoardPage() {
   const [onlyUnmapped, setOnlyUnmapped] = useState(false);
   const [onlyHidden, setOnlyHidden] = useState(false);
   const [creating, setCreating] = useState<Status | null>(null);
+  const [importing, setImporting] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const all = useMemo(() => tasks ?? [], [tasks]);
@@ -75,7 +78,7 @@ export function BoardPage() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (modalOpen || creating || isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (modalOpen || creating || importing || isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'c' || e.key === 'C') {
         e.preventDefault();
         setCreating('ideia');
@@ -86,7 +89,7 @@ export function BoardPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [modalOpen, creating]);
+  }, [modalOpen, creating, importing]);
 
   const move = useMutation({
     mutationFn: (v: { id: string; status: Status; position: number }) => api.updateTask(v.id, { status: v.status, position: v.position }),
@@ -172,6 +175,9 @@ export function BoardPage() {
             Arraste os cartões entre as colunas · <Kbd>C</Kbd> criar · <Kbd>/</Kbd> buscar
           </p>
         </div>
+        <Button variant="secondary" onClick={() => setImporting(true)}>
+          <Upload className="size-4" /> Importar do Jira
+        </Button>
         <Button onClick={() => setCreating('ideia')}>
           <Plus className="size-4" /> Criar
         </Button>
@@ -335,6 +341,7 @@ export function BoardPage() {
       )}
 
       {creating && <CreateTaskDialog initialStatus={creating} categories={categories} onClose={() => setCreating(null)} />}
+      {importing && <ImportJiraDialog onClose={() => setImporting(false)} />}
       <Outlet />
     </div>
   );

@@ -285,11 +285,48 @@ test('acessos: link pessoal entra no painel e revogar derruba na hora', async ({
   await other.close();
 });
 
+const JIRA_CSV = [
+  'Resumo,Chave do item,ID do item,Tipo de item,Status,Prioridade,Responsável,Criado,Resolvido,Data limite,Descrição,Pai',
+  'Viabilizar ampliação física do campus,KAN-1,10001,Tarefa,Em andamento,Alta,Vinícius Lima Santos,01/out/26 9:15 AM,,18/out/26,Ampliação com novo bloco,',
+  'Projeto arquitetônico,KAN-3,10003,Subtarefa,Concluído,Média,,02/out/26 8:00 AM,10/out/26 5:30 PM,,,10001',
+  'Acompanhar reforma do auditório,KAN-10,10010,Tarefa,Concluído,Média,,15/set/26 3:00 PM,30/set/26 11:00 AM,,,',
+  'Buscar melhorias do mini-auditório,KAN-11,10011,Tarefa,A fazer,Média,,20/set/26 3:00 PM,,,,',
+].join('\n');
+
+test('importar do Jira: prévia, confirmação e reimportação sem duplicar', async ({ page }) => {
+  await enter(page);
+  const file = { name: 'jira.csv', mimeType: 'text/csv', buffer: Buffer.from(JIRA_CSV) };
+
+  await page.getByRole('button', { name: 'Importar do Jira' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Importar do Jira' });
+  await dialog.getByLabel('Arquivo CSV do Jira').setInputFiles(file);
+  const preview = dialog.getByRole('region', { name: 'Prévia da importação' });
+  await expect(preview.getByText('KAN-1', { exact: true })).toBeVisible();
+  await expect(preview.getByText('Viabilizar ampliação física do campus')).toBeVisible();
+  await expect(preview.getByText('1/1')).toBeVisible(); // subtarefa concluída do KAN-1
+  await expect(dialog.getByRole('button', { name: 'Importar 3 projetos' })).toBeEnabled();
+  await dialog.getByRole('button', { name: 'Importar 3 projetos' }).click();
+
+  await expect(page.getByText('Importação concluída')).toBeVisible();
+  await expect(column(page, 'Em andamento')).toContainText('Viabilizar ampliação física do campus');
+  await expect(column(page, 'Concluído')).toContainText('Acompanhar reforma do auditório');
+  await expect(column(page, 'A fazer')).toContainText('Buscar melhorias do mini-auditório');
+
+  // Reimportar o mesmo arquivo: a prévia marca "atualiza" e nada é duplicado
+  await page.getByRole('button', { name: 'Importar do Jira' }).click();
+  await dialog.getByLabel('Arquivo CSV do Jira').setInputFiles(file);
+  await expect(dialog.getByText('atualiza', { exact: true })).toHaveCount(3);
+  await expect(dialog.getByText('(0 novos, 3 atualizados)')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Importar 3 projetos' }).click();
+  await expect(page.getByText('Importação concluída')).toBeVisible();
+  await expect(card(page, 'Viabilizar ampliação física do campus')).toHaveCount(1);
+});
+
 test('remover a demonstração deixa só os projetos reais', async ({ page }) => {
   await enter(page);
   await page.getByRole('button', { name: 'Remover demonstração' }).click();
   await expect(page.getByText('14 projetos de demonstração removidos')).toBeVisible();
-  await expect(page.locator('[data-rfd-draggable-id]')).toHaveCount(2);
+  await expect(page.locator('[data-rfd-draggable-id]')).toHaveCount(5); // 2 criados no painel + 3 importados do Jira
 });
 
 test('sair encerra a sessão deste navegador', async ({ page }) => {

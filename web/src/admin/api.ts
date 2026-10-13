@@ -1,7 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { request } from '@shared/http';
-import type { AccessKey, CommentItem, DocumentItem, Me, NotificationItem, Report, Subtask, TaskDetail, TaskSummary } from './types';
+import type { Status } from '@shared/types';
+import type { AccessKey, CommentItem, DocumentItem, Me, NotificationItem, Priority, Report, Subtask, TaskDetail, TaskSummary } from './types';
 
 // Cabeçalho exigido pelo servidor em toda alteração (proteção contra CSRF).
 const ADMIN_HEADERS = { 'X-CIM-Admin': '1' };
@@ -29,6 +30,28 @@ export type TaskPatch = Partial<
 >;
 export type SubtaskPatch = Partial<Omit<Subtask, 'id' | 'taskId'>>;
 type KeyResult = { key: AccessKey; link: string; emailStatus: 'sent' | 'failed' | 'simulated' | null };
+
+export interface JiraImport {
+  applied: boolean;
+  projects: {
+    key: string;
+    title: string;
+    status: Status;
+    rawStatus: string;
+    priority: Priority;
+    responsibleName: string;
+    category: string;
+    dueDate: string | null;
+    subtasks: number;
+    subtasksDone: number;
+    comments: number;
+    exists: boolean;
+  }[];
+  totals: { projects: number; subtasks: number; comments: number; new: number; updated: number };
+  byStatus: Record<Status, number>;
+  warnings: string[];
+  result?: { created: number; updated: number; subtasksCreated: number; subtasksUpdated: number; comments: number };
+}
 
 export const api = {
   me: () => call<Me>('GET', '/me'),
@@ -61,6 +84,14 @@ export const api = {
     call<NotificationItem>('POST', `/tasks/${taskId}/notify`, { email, subtaskId }),
 
   report: (from: string, to: string) => call<Report>('GET', `/reports?from=${from}&to=${to}`),
+
+  importJira: (file: File, apply: boolean, visible: boolean) => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('apply', String(apply));
+    form.append('visible', String(visible));
+    return call<JiraImport>('POST', '/import/jira', form);
+  },
 
   keys: () => call<AccessKey[]>('GET', '/acessos'),
   createKey: (data: { name: string; email: string; sendEmail: boolean }) => call<KeyResult>('POST', '/acessos', data),

@@ -622,6 +622,123 @@ describe('acessos (links-chave)', () => {
   });
 });
 
+// ------------------------------------------------------------------ importação do Jira
+const JIRA_PT = [
+  'Resumo,Chave do item,ID do item,Tipo de item,Status,Prioridade,Responsável,Criado,Resolvido,Data limite,Descrição,Rótulos,Pai,Comentário,Campo personalizado (Rank)',
+  'Viabilizar ampliação física do campus,KAN-1,10001,Tarefa,Em andamento,Alta,Vinícius Lima Santos,01/out/26 9:15 AM,,18/out/26,"Ampliação com *novo bloco*\nh2. Etapas\n* licitação, projeto",infraestrutura,,"05/out/26 10:00 AM;712020:abcdef0123456789abcdef01;Reunião com a reitoria; marcada",0|i0000b:',
+  'Projeto arquitetônico,KAN-3,10003,Subtarefa,Concluído,Média,Engenharia,02/out/26 8:00 AM,10/out/26 5:30 PM,,,,10001,,0|i0000d:',
+  'Orçamento,KAN-4,10004,Subtarefa,A fazer,Média,,02/out/26 8:00 AM,,,,,10001,,0|i0000e:',
+  'Acompanhar reforma do auditório,KAN-10,10010,Tarefa,Concluído,Média,,15/set/26 3:00 PM,30/set/26 11:00 AM,,,,,,0|i00009:',
+  'Buscar melhorias do mini-auditório,KAN-11,10011,Tarefa,A fazer,Mais baixa,,20/set/26 3:00 PM,,,,,,,0|i0000a:',
+  'Subtarefa sem pai,KAN-99,10099,Subtarefa,A fazer,Média,,20/set/26 3:00 PM,,,,,99999,,0|i0000z:',
+].join('\r\n');
+
+const JIRA_EN = [
+  'Summary,Issue key,Issue id,Issue Type,Status,Priority,Assignee,Created,Resolved,Due date,Description,Parent',
+  'Buscar modernização do parque tecnológico,KAN-2,20002,Task,In Progress,Highest,Ana,18/Oct/26 12:00 AM,,2026-12-01,,',
+  'Levantar equipamentos,KAN-5,20005,Sub-task,Done,Medium,,18/Oct/26 12:00 AM,19/Oct/26 2:30 PM,,,20002',
+].join('\n');
+
+async function importJira(csv: string, apply: boolean, visible = true) {
+  const form = new FormData();
+  form.append('file', new Blob([csv], { type: 'text/csv' }), 'jira.csv');
+  form.append('apply', String(apply));
+  form.append('visible', String(visible));
+  return admin.req('POST', '/api/admin/import/jira', form);
+}
+
+describe('importação do Jira (CSV)', () => {
+  test('prévia não grava nada e avisa sobre subtarefa sem pai', async () => {
+    const before = (await admin.get('/api/admin/tasks')).json.length;
+    const r = await importJira(JIRA_PT, false);
+    assert.equal(r.status, 200);
+    assert.equal(r.json.applied, false);
+    assert.deepEqual(r.json.totals, { projects: 3, subtasks: 2, comments: 1, new: 3, updated: 0 });
+    assert.deepEqual(r.json.byStatus, { ideia: 0, a_fazer: 1, em_andamento: 1, em_analise: 0, concluido: 1 });
+    assert.ok(r.json.warnings.some((w: string) => w.includes('KAN-99')));
+    assert.equal((await admin.get('/api/admin/tasks')).json.length, before);
+  });
+
+  test('importa projetos, subtarefas, datas, prioridades e comentários (cabeçalho em português)', async () => {
+    const r = await importJira(JIRA_PT, true);
+    assert.equal(r.json.applied, true);
+    assert.deepEqual(r.json.result, { created: 3, updated: 0, subtasksCreated: 2, subtasksUpdated: 0, comments: 1 });
+
+    const all = (await admin.get('/api/admin/tasks')).json;
+    const find = (title: string) => all.find((t: any) => t.title === title);
+    const kan1 = (await admin.get(`/api/admin/tasks/${find('Viabilizar ampliação física do campus').id}`)).json;
+    assert.equal(kan1.status, 'em_andamento');
+    assert.equal(kan1.priority, 'alta');
+    assert.equal(kan1.responsibleName, 'Vinícius Lima Santos');
+    assert.equal(kan1.dueDate, '2026-10-18');
+    assert.equal(kan1.category, 'Infraestrutura');
+    assert.equal(kan1.isPublic, true);
+    assert.match(kan1.createdAt, /^2026-10-01T12:15/); // 9:15 em Sergipe = 12:15 UTC
+    assert.equal(kan1.description, 'Ampliação com novo bloco\nEtapas\n• licitação, projeto');
+    assert.deepEqual(
+      kan1.subtasks.map((s: any) => [s.title, s.done, s.completedAt, s.responsibleName]),
+      [
+        ['Projeto arquitetônico', true, '2026-10-10', 'Engenharia'],
+        ['Orçamento', false, null, ''],
+      ],
+    );
+    assert.deepEqual(
+      kan1.comments.map((c: any) => [c.authorName, c.body]),
+      [['Jira (importado)', 'Reunião com a reitoria; marcada']],
+    );
+    assert.ok(kan1.activities.some((a: any) => a.message === 'importou do Jira (KAN-1)'));
+
+    const kan10 = find('Acompanhar reforma do auditório');
+    assert.equal(kan10.status, 'concluido');
+    assert.equal(kan10.completedAt, '2026-09-30');
+    const kan11 = find('Buscar melhorias do mini-auditório');
+    assert.equal(kan11.priority, 'mais_baixa');
+    assert.equal(kan11.status, 'a_fazer');
+    assert.equal(kan11.posX, null, 'entra sem local no mapa');
+
+    const pub = (await anon.get('/api/public/projects')).json.projects.map((p: any) => p.title);
+    assert.ok(pub.includes('Viabilizar ampliação física do campus'));
+  });
+
+  test('reimportar atualiza sem duplicar e respeita o que foi feito no painel', async () => {
+    const all = (await admin.get('/api/admin/tasks')).json;
+    const kan11 = all.find((t: any) => t.title === 'Buscar melhorias do mini-auditório');
+    await admin.patch(`/api/admin/tasks/${kan11.id}`, { posX: 10, posZ: 10, description: 'Escrito no painel' });
+
+    const changed = JIRA_PT.replace('Buscar melhorias do mini-auditório,KAN-11,10011,Tarefa,A fazer', 'Buscar melhorias do mini-auditório,KAN-11,10011,Tarefa,Em análise');
+    const r = await importJira(changed, true);
+    assert.deepEqual(r.json.result, { created: 0, updated: 3, subtasksCreated: 0, subtasksUpdated: 2, comments: 0 });
+    assert.equal((await admin.get('/api/admin/tasks')).json.length, all.length, 'nenhum duplicado');
+
+    const after = (await admin.get(`/api/admin/tasks/${kan11.id}`)).json;
+    assert.equal(after.status, 'em_analise');
+    assert.deepEqual([after.posX, after.posZ], [10, 10], 'posição no mapa mantida');
+    assert.equal(after.description, 'Escrito no painel', 'descrição do painel mantida quando o Jira não tem');
+  });
+
+  test('cabeçalho em inglês e importação oculta do site', async () => {
+    const r = await importJira(JIRA_EN, true, false);
+    assert.deepEqual(r.json.result, { created: 1, updated: 0, subtasksCreated: 1, subtasksUpdated: 0, comments: 0 });
+    const t = (await admin.get('/api/admin/tasks')).json.find((x: any) => x.title === 'Buscar modernização do parque tecnológico');
+    assert.equal(t.status, 'em_andamento');
+    assert.equal(t.priority, 'mais_alta');
+    assert.equal(t.dueDate, '2026-12-01');
+    assert.equal(t.isPublic, false);
+    const sub = (await admin.get(`/api/admin/tasks/${t.id}`)).json.subtasks[0];
+    assert.deepEqual([sub.title, sub.done, sub.completedAt], ['Levantar equipamentos', true, '2026-10-19']);
+    const pub = (await anon.get('/api/public/projects')).json.projects.map((p: any) => p.title);
+    assert.ok(!pub.includes('Buscar modernização do parque tecnológico'));
+  });
+
+  test('arquivo que não é do Jira é recusado com explicação', async () => {
+    const r = await importJira('nome,idade\nAna,30', false);
+    assert.equal(r.status, 400);
+    assert.match(r.json.error, /Resumo|Chave/);
+    const sem = await admin.req('POST', '/api/admin/import/jira', new FormData());
+    assert.equal(sem.status, 400);
+  });
+});
+
 // ------------------------------------------------------------------ exclusão
 describe('exclusão de projeto', () => {
   test('apaga subtarefas, comentários e arquivos do projeto', async () => {

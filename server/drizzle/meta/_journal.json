@@ -15,6 +15,13 @@
       "when": 1791757494440,
       "tag": "0001_jira_features",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791892825711,
+      "tag": "0002_import_externo",
+      "breakpoints": true
     }
   ]
 }

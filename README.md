@@ -27,6 +27,7 @@ Só a planta 3D e o filtro, como pedido:
 - **Mapa do campus**: arraste a bolinha de um projeto da lista até o ponto do campus; no mapa, arraste as bolinhas para ajustar (vista “Planta” ou “3D”).
 - **Relatório** por período (com atalhos) pronto para **imprimir/salvar em PDF**: projetos e etapas concluídos, em andamento, novas ideias e histórico de ações.
 - **Acessos**: gera, regenera e revoga os links-chave das pessoas.
+- **Importar do Jira** (botão no quadro): recebe o CSV exportado do Jira (“Exportar CSV (todos os campos)”), mostra a prévia e importa projetos, subtarefas, responsáveis, prioridades, datas e comentários. Aceita cabeçalhos em português ou inglês. Reimportar o mesmo arquivo **atualiza** os itens (pela chave `KAN-n`) sem duplicar e sem apagar o que foi feito no painel, como a posição no mapa.
 
 ## Segurança do painel (sem login)
 
@@ -72,8 +73,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ## Testes
 
 ```bash
-npm test            # API: 47 cenários (porteiro do painel, quadro, subtarefas, documentos, e-mail, mapa, relatório, acessos)
-npm run test:e2e    # navegador: 18 cenários no build de produção (site público e painel, como uma pessoa usaria)
+npm test            # API: 52 cenários (porteiro do painel, quadro, subtarefas, documentos, e-mail, mapa, relatório, acessos, importação do Jira)
+npm run test:e2e    # navegador: 19 cenários no build de produção (site público e painel, como uma pessoa usaria)
 ```
 
 No GitHub, os dois rodam sozinhos a cada push (`.github/workflows/ci.yml`).
