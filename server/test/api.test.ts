@@ -730,6 +730,19 @@ describe('importação do Jira (CSV)', () => {
     assert.ok(!pub.includes('Buscar modernização do parque tecnológico'));
   });
 
+  test('categoria com espaços repetidos é normalizada (o filtro do quadro depende disso)', async () => {
+    const csv = [
+      'Resumo,Chave do item,ID do item,Tipo de item,Status,Rótulos',
+      'Incentivar o diálogo com as entidades,KAN-60,30060,Tarefa,Ideia,Gestão  Administrativa   e de Pessoal',
+      'Assegurar os encaminhamentos,KAN-61,30061,Tarefa,Ideia,"Gestão Administrativa e de Pessoal "',
+    ].join('\n');
+    assert.equal((await importJira(csv, true)).json.result.created, 2);
+    const all = (await admin.get('/api/admin/tasks')).json.filter((t: any) => t.title.startsWith('Incentivar') || t.title.startsWith('Assegurar'));
+    assert.deepEqual([...new Set(all.map((t: any) => t.category))], ['Gestão Administrativa e de Pessoal'], 'uma só categoria');
+    const edited = await admin.patch(`/api/admin/tasks/${all[0].id}`, { category: '  Infra   estrutura  ' });
+    assert.equal(edited.json.category, 'Infra estrutura');
+  });
+
   test('arquivo que não é do Jira é recusado com explicação', async () => {
     const r = await importJira('nome,idade\nAna,30', false);
     assert.equal(r.status, 400);

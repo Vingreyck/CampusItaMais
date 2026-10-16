@@ -22,6 +22,13 @@
       "when": 1791892825711,
       "tag": "0002_import_externo",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792074731890,
+      "tag": "0003_normaliza_categorias",
+      "breakpoints": true
     }
   ]
 }

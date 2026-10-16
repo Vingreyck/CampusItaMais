@@ -89,6 +89,18 @@ test('filtros rápidos por responsável e "sem local no mapa"', async ({ page })
   await page.getByRole('button', { name: 'Limpar filtros' }).click();
 });
 
+test('filtro por categoria mostra só os cartões da categoria escolhida', async ({ page }) => {
+  await enter(page);
+  const total = await page.locator('[data-rfd-draggable-id]').count();
+  const expected = (await (await page.request.get('/api/admin/tasks')).json()).filter((t: { category: string }) => t.category === 'Infraestrutura').length;
+  expect(expected).toBeGreaterThan(1);
+  await page.getByLabel('Categoria', { exact: true }).selectOption('Infraestrutura');
+  await expect(page.locator('[data-rfd-draggable-id]')).toHaveCount(expected);
+  for (const t of await page.locator('[data-rfd-draggable-id]').all()) await expect(t).toContainText('Infraestrutura');
+  await page.getByLabel('Categoria', { exact: true }).selectOption('');
+  await expect(page.locator('[data-rfd-draggable-id]')).toHaveCount(total);
+});
+
 test('arrastar o cartão para outra coluna muda a situação (arraste por teclado)', async ({ page }) => {
   await enter(page);
   const c = card(page, TITLE);

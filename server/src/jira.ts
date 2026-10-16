@@ -261,7 +261,7 @@ export function parseJiraExport(text: string): JiraParseResult {
       startDate: parseJiraDate(get(row, 'start'))?.day ?? null,
       dueDate: parseJiraDate(get(row, 'due'))?.day ?? null,
       completedAt: status === 'concluido' ? (resolved?.day ?? null) : null,
-      category: capitalize((labels[0] ?? get(row, 'project')).replace(/[-_]+/g, ' ')).slice(0, 80),
+      category: capitalize((labels[0] ?? get(row, 'project')).replace(/[-_\s]+/g, ' ').trim()).slice(0, 80),
       rank: get(row, 'rank'),
       comments: comments.filter((c) => c.body),
       parentRef: get(row, 'parentKey') || get(row, 'parent'),

@@ -221,7 +221,9 @@ export function BoardPage() {
           <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Categoria" className={clsx(inputCls, 'h-9 w-auto py-1.5')}>
             <option value="">Todas as categorias</option>
             {categories.map((c) => (
-              <option key={c}>{c}</option>
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
           </select>
         )}

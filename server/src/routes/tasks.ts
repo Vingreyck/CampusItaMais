@@ -27,7 +27,8 @@ const taskFields = {
   status: z.enum(STATUSES),
   position: z.number(),
   priority: z.enum(PRIORITIES),
-  category: z.string().trim().max(80),
+  // Espaços repetidos viram um só (evita categorias "iguais" que o filtro não reconhece).
+  category: z.string().transform((s) => s.replace(/\s+/g, ' ').trim()).pipe(z.string().max(80)),
   responsibleName: z.string().trim().max(120),
   responsibleEmail: emailOptional,
   startDate: dateField,
