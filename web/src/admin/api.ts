@@ -31,6 +31,47 @@ export type TaskPatch = Partial<
 export type SubtaskPatch = Partial<Omit<Subtask, 'id' | 'taskId'>>;
 type KeyResult = { key: AccessKey; link: string; emailStatus: 'sent' | 'failed' | 'simulated' | null };
 
+export interface AiStatus {
+  enabled: boolean;
+  provider: string;
+  model?: string | null;
+  sttModel?: string;
+  problem?: string | null;
+  usedToday?: number;
+  limit?: number;
+  maxFileMb?: number;
+}
+
+export interface AiItem {
+  index: number;
+  action: 'create' | 'update';
+  code: number | null;
+  title: string;
+  description: string;
+  category: string;
+  status: Status | null;
+  priority: Priority | null;
+  responsibleName: string;
+  dueDate: string | null;
+  subtasks: string[];
+  reason: string;
+  current: { title: string; status: Status; priority: Priority; category: string } | null;
+  changes: string[];
+  newSubtasks: string[];
+  noChange: boolean;
+}
+
+export interface AiAnalysis {
+  source: string;
+  chars: number;
+  items: AiItem[];
+  warnings: string[];
+  masked: Record<string, number>;
+  maskedTotal: number;
+  usedToday: number;
+  limit: number;
+}
+
 export interface JiraImport {
   applied: boolean;
   projects: {
@@ -92,6 +133,35 @@ export const api = {
     form.append('visible', String(visible));
     return call<JiraImport>('POST', '/import/jira', form);
   },
+
+  aiStatus: () => call<AiStatus>('GET', '/ai/status'),
+  aiTranscribe: (audio: Blob) => {
+    const form = new FormData();
+    form.append('audio', audio, `gravacao.${audio.type.includes('mp4') ? 'm4a' : 'webm'}`);
+    return call<{ text: string }>('POST', '/ai/transcribe', form);
+  },
+  aiAnalyze: (text: string, file: File | null) => {
+    const form = new FormData();
+    form.append('text', text);
+    if (file) form.append('file', file);
+    return call<AiAnalysis>('POST', '/ai/analyze', form);
+  },
+  aiApply: (items: AiItem[], visible: boolean) =>
+    call<{ created: number; updated: number; subtasksCreated: number; details: { code: number; title: string; action: string }[] }>('POST', '/ai/apply', {
+      visible,
+      items: items.map((i) => ({
+        action: i.action,
+        code: i.code,
+        title: i.title,
+        description: i.description,
+        category: i.category,
+        status: i.status,
+        priority: i.priority,
+        responsibleName: i.responsibleName,
+        dueDate: i.dueDate,
+        subtasks: i.subtasks,
+      })),
+    }),
 
   keys: () => call<AccessKey[]>('GET', '/acessos'),
   createKey: (data: { name: string; email: string; sendEmail: boolean }) => call<KeyResult>('POST', '/acessos', data),

@@ -27,6 +27,7 @@ import { formatDayShort, pct, todayISO } from '@shared/format';
 import type { Status } from '@shared/types';
 import { api } from './api';
 import { CreateTaskDialog } from './CreateTaskDialog';
+import { ImportAiDialog } from './ImportAiDialog';
 import { ImportJiraDialog } from './ImportJiraDialog';
 import { PriorityIcon } from './priority';
 import type { TaskSummary } from './types';
@@ -52,6 +53,7 @@ export function BoardPage() {
   const [onlyHidden, setOnlyHidden] = useState(false);
   const [creating, setCreating] = useState<Status | null>(null);
   const [importing, setImporting] = useState(false);
+  const [importingAi, setImportingAi] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const all = useMemo(() => tasks ?? [], [tasks]);
@@ -78,7 +80,7 @@ export function BoardPage() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (modalOpen || creating || importing || isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+      if (modalOpen || creating || importing || importingAi || isTyping(e) || e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key === 'c' || e.key === 'C') {
         e.preventDefault();
         setCreating('ideia');
@@ -89,7 +91,7 @@ export function BoardPage() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [modalOpen, creating, importing]);
+  }, [modalOpen, creating, importing, importingAi]);
 
   const move = useMutation({
     mutationFn: (v: { id: string; status: Status; position: number }) => api.updateTask(v.id, { status: v.status, position: v.position }),
@@ -175,6 +177,9 @@ export function BoardPage() {
             Arraste os cartões entre as colunas · <Kbd>C</Kbd> criar · <Kbd>/</Kbd> buscar
           </p>
         </div>
+        <Button variant="secondary" onClick={() => setImportingAi(true)}>
+          <Sparkles className="size-4 text-violet-500" /> Importar com IA
+        </Button>
         <Button variant="secondary" onClick={() => setImporting(true)}>
           <Upload className="size-4" /> Importar do Jira
         </Button>
@@ -344,6 +349,7 @@ export function BoardPage() {
 
       {creating && <CreateTaskDialog initialStatus={creating} categories={categories} onClose={() => setCreating(null)} />}
       {importing && <ImportJiraDialog onClose={() => setImporting(false)} />}
+      {importingAi && <ImportAiDialog onClose={() => setImportingAi(false)} />}
       <Outlet />
     </div>
   );

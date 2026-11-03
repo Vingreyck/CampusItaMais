@@ -27,6 +27,10 @@ Só a planta 3D e o filtro, como pedido:
 - **Mapa do campus**: arraste a bolinha de um projeto da lista até o ponto do campus; no mapa, arraste as bolinhas para ajustar (vista “Planta” ou “3D”).
 - **Relatório** por período (com atalhos) pronto para **imprimir/salvar em PDF**: projetos e etapas concluídos, em andamento, novas ideias e histórico de ações.
 - **Acessos**: gera, regenera e revoga os links-chave das pessoas.
+- **Importar com IA** (botão no quadro): cole ou dite um texto, envie um arquivo (PDF, Word, Excel, CSV, texto) ou grave a voz. A IA gratuita da **Groq** propõe ações novas e atualizações de ações que já existem (situação, prioridade, subtarefas). Você confere a **prévia**, desmarca o que não quiser e confirma.
+  - O texto de PDF/Word/Excel é extraído no servidor, sem IA. **E-mails, telefones, CPF e CNPJ são trocados por marcadores antes de sair do servidor** e voltam depois. O áudio não é guardado.
+  - A IA nunca apaga nem sobrescreve o que foi escrito no painel (descrição, categoria, responsável e prazo só entram se estiverem vazios) e não inventa datas.
+  - Tem teto diário de usos (`AI_DAILY_LIMIT`). O modelo é escolhido sozinho na lista da Groq (ou fixado em `GROQ_MODEL`). Sem `GROQ_API_KEY`, o recurso fica desligado e o resto do sistema não muda.
 - **Importar do Jira** (botão no quadro): recebe o CSV exportado do Jira (“Exportar CSV (todos os campos)”), mostra a prévia e importa projetos, subtarefas, responsáveis, prioridades, datas e comentários. Aceita cabeçalhos em português ou inglês. Reimportar o mesmo arquivo **atualiza** os itens (pela chave `KAN-n`) sem duplicar e sem apagar o que foi feito no painel, como a posição no mapa.
 
 ## Segurança do painel (sem login)
@@ -73,8 +77,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ## Testes
 
 ```bash
-npm test            # API: 52 cenários (porteiro do painel, quadro, subtarefas, documentos, e-mail, mapa, relatório, acessos, importação do Jira)
-npm run test:e2e    # navegador: 19 cenários no build de produção (site público e painel, como uma pessoa usaria)
+npm test            # API: 69 cenários (porteiro do painel, quadro, subtarefas, documentos, e-mail, mapa, relatório, acessos, importação do Jira, IA com a Groq simulada)
+npm run test:e2e    # navegador: 24 cenários no build de produção (a Groq é simulada por e2e/fake-groq.mjs) (site público e painel, como uma pessoa usaria)
 ```
 
 No GitHub, os dois rodam sozinhos a cada push (`.github/workflows/ci.yml`).
@@ -84,7 +88,7 @@ No GitHub, os dois rodam sozinhos a cada push (`.github/workflows/ci.yml`).
 1. **Um único serviço** a partir deste repositório, com **Root Directory vazio**: ele usa o `Dockerfile` e o `railway.json` da raiz. Não divida em serviços `web` e `server`. Com o repositório conectado, cada push no `main` faz deploy, e as migrações do banco rodam sozinhas.
 2. Adicione um **PostgreSQL** e defina `DATABASE_URL=${{Postgres.DATABASE_URL}}`.
 3. Adicione um **volume** montado em `/data` e defina `DATA_DIR=/data`.
-4. Variáveis: `JWT_SECRET`, `ADMIN_ACCESS_KEY`, `ADMIN_NAME`, `MAIL_FROM` e a chave do provedor de e-mail (`RESEND_API_KEY` ou `BREVO_API_KEY`). Opcional: `SEED_DEMO=true` para criar projetos de demonstração.
+4. Variáveis: `JWT_SECRET`, `ADMIN_ACCESS_KEY`, `ADMIN_NAME`, `MAIL_FROM`, a chave do provedor de e-mail (`RESEND_API_KEY` ou `BREVO_API_KEY`) e, para o “Importar com IA”, `GROQ_API_KEY`. Opcional: `SEED_DEMO=true` para criar projetos de demonstração.
 5. Gere um domínio público. `PUBLIC_URL` é preenchida automaticamente pelo domínio do Railway; defina-a se usar domínio próprio.
 
 ## Pendências

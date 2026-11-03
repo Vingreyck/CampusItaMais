@@ -7,6 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
  *   npm run test:e2e
  */
 export const PORT = 3210;
+export const FAKE_GROQ_PORT = 3211;
 export const MASTER_KEY = 'chave-mestra-e2e-'.padEnd(48, 'k');
 
 export default defineConfig({
@@ -25,7 +26,15 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } }],
-  webServer: {
+  webServer: [
+    {
+      command: 'node fake-groq.mjs',
+      url: `http://localhost:${FAKE_GROQ_PORT}/health`,
+      reuseExistingServer: false,
+      stdout: 'ignore',
+      env: { FAKE_GROQ_PORT: String(FAKE_GROQ_PORT) },
+    },
+    {
     command: 'node ../server/dist/index.js',
     url: `http://localhost:${PORT}/api/health`,
     reuseExistingServer: false,
@@ -45,6 +54,10 @@ export default defineConfig({
       RESEND_API_KEY: '',
       BREVO_API_KEY: '',
       SMTP_HOST: '',
+      GROQ_API_KEY: 'gsk_e2e_teste',
+      GROQ_BASE_URL: `http://localhost:${FAKE_GROQ_PORT}/openai/v1`,
+      AI_DAILY_LIMIT: '50',
     },
   },
+  ],
 });

@@ -15,6 +15,7 @@ import { filesRouter } from './routes/files';
 import { tasksRouter } from './routes/tasks';
 import { reportsRouter } from './routes/reports';
 import { importRouter } from './routes/import';
+import { aiRouter } from './routes/ai';
 import { MAX_UPLOAD_MB } from './uploads';
 import { HttpError } from './util';
 
@@ -84,7 +85,7 @@ export function createApp() {
   app.use('/api/files', filesRouter);
   app.use('/api', accessRouter);
   // Tudo do painel passa pelo porteiro: sem sessão válida a resposta é idêntica à de uma rota inexistente.
-  app.use('/api/admin', adminApiGate, adminAccessRouter, tasksRouter, reportsRouter, importRouter);
+  app.use('/api/admin', adminApiGate, adminAccessRouter, tasksRouter, reportsRouter, importRouter, aiRouter);
   app.use('/api', (_req, res) => {
     res.status(404).json(apiNotFound);
   });

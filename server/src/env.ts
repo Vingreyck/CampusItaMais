@@ -77,6 +77,14 @@ export const env = {
       secure: e.SMTP_SECURE === 'true',
     },
   },
+  // IA gratuita (Groq): vazio/"false" desliga. O modelo é descoberto na lista da Groq quando GROQ_MODEL não é definido.
+  ai: {
+    groqKey: optional(e.GROQ_API_KEY),
+    baseUrl: (e.GROQ_BASE_URL || 'https://api.groq.com/openai/v1').replace(/\/+$/, ''),
+    model: optional(e.GROQ_MODEL),
+    sttModel: optional(e.GROQ_STT_MODEL) || 'whisper-large-v3-turbo',
+    dailyLimit: Number(e.AI_DAILY_LIMIT) || 40,
+  },
   siteDist: path.join(REPO_ROOT, 'web', 'dist', 'site'),
   adminDist: path.join(REPO_ROOT, 'web', 'dist', 'admin', 'admin'),
   migrationsDir: path.join(SERVER_ROOT, 'drizzle'),
