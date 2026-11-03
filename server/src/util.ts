@@ -32,6 +32,15 @@ export const PUBLIC_GROUP: Record<Status, PublicGroup> = {
 
 export const statusLabel = (s: string) => STATUS_LABEL[s as Status] ?? s;
 
+export const DEPENDENCIES = ['nenhuma', 'outro_setor', 'reitoria', 'externo'] as const;
+export type Dependency = (typeof DEPENDENCIES)[number];
+export const DEPENDENCY_LABEL: Record<Dependency, string> = {
+  nenhuma: 'Sem dependência',
+  outro_setor: 'Depende de outro setor do campus',
+  reitoria: 'Depende da Reitoria / UFS',
+  externo: 'Depende de órgão externo ou parceiro',
+};
+
 export const PRIORITIES = ['mais_alta', 'alta', 'media', 'baixa', 'mais_baixa'] as const;
 export type Priority = (typeof PRIORITIES)[number];
 export const PRIORITY_LABEL: Record<Priority, string> = {

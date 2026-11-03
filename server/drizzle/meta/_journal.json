@@ -29,6 +29,13 @@
       "when": 1792074731890,
       "tag": "0003_normaliza_categorias",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793709774090,
+      "tag": "0004_dependencia",
+      "breakpoints": true
     }
   ]
 }

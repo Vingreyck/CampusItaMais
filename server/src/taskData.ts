@@ -32,6 +32,8 @@ export function serializeTask(t: TaskRow, counts?: { subtaskTotal: number; subta
     status: t.status,
     position: t.position,
     priority: t.priority,
+    dependency: t.dependency,
+    dependencyNote: t.dependencyNote,
     category: t.category,
     responsibleName: t.responsibleName,
     responsibleEmail: t.responsibleEmail,

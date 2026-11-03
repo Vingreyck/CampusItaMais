@@ -16,6 +16,8 @@ export type TaskPatch = Partial<
     | 'status'
     | 'position'
     | 'priority'
+    | 'dependency'
+    | 'dependencyNote'
     | 'category'
     | 'responsibleName'
     | 'responsibleEmail'

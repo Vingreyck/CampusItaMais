@@ -31,6 +31,8 @@ publicRouter.get('/projects', async (_req, res) => {
       description: t.description,
       status: t.status,
       category: t.category,
+      dependency: t.dependency,
+      dependencyNote: t.dependencyNote,
       responsibleName: t.responsibleName,
       startDate: t.startDate,
       dueDate: t.dueDate,

@@ -242,6 +242,36 @@ describe('quadro de projetos', () => {
     }
   });
 
+  test('dependência: de quem depende o andamento (separada da prioridade), com detalhe, histórico e site público', async () => {
+    const t = (await admin.post('/api/admin/tasks', { title: 'Ação que depende da Reitoria', priority: 'alta' })).json;
+    assert.equal(t.dependency, 'nenhuma');
+    assert.equal(t.dependencyNote, '');
+
+    for (const bad of [{ dependency: 'terceiros' }, { dependencyNote: 'x'.repeat(121) }]) {
+      assert.equal((await admin.patch(`/api/admin/tasks/${t.id}`, bad)).status, 400, JSON.stringify(bad).slice(0, 40));
+    }
+
+    let r = await admin.patch(`/api/admin/tasks/${t.id}`, { dependency: 'reitoria', dependencyNote: '  PROGRAD   e  DIOPI ' });
+    assert.deepEqual([r.json.dependency, r.json.dependencyNote, r.json.priority], ['reitoria', 'PROGRAD e DIOPI', 'alta'], 'prioridade não muda');
+    assert.ok(r.json.activities.some((a: any) => a.message === 'marcou como: depende da reitoria / ufs'));
+
+    r = await admin.patch(`/api/admin/tasks/${t.id}`, { dependencyNote: 'Só a PROGRAD' });
+    assert.ok(r.json.activities.some((a: any) => a.message === 'indicou de quem depende: Só a PROGRAD'));
+
+    // No site público aparece de quem depende (e nada interno)
+    await admin.patch(`/api/admin/tasks/${t.id}`, { posX: 1, posZ: 1 });
+    const pub = (await anon.get('/api/public/projects')).json.projects.find((p: any) => p.id === t.id);
+    assert.deepEqual([pub.dependency, pub.dependencyNote], ['reitoria', 'Só a PROGRAD']);
+
+    // Voltar para "sem dependência" limpa o detalhe
+    r = await admin.patch(`/api/admin/tasks/${t.id}`, { dependency: 'nenhuma' });
+    assert.deepEqual([r.json.dependency, r.json.dependencyNote], ['nenhuma', '']);
+    assert.ok(r.json.activities.some((a: any) => a.message === 'removeu a dependência'));
+    // Criar já com dependência
+    const c = (await admin.post('/api/admin/tasks', { title: 'Nasce dependente', dependency: 'externo', dependencyNote: 'Prefeitura' })).json;
+    assert.deepEqual([c.dependency, c.dependencyNote], ['externo', 'Prefeitura']);
+  });
+
   test('mover para "Em andamento" preenche o início; "Concluído" preenche a conclusão; voltar limpa', async () => {
     let r = await admin.patch(`/api/admin/tasks/${taskId}`, { status: 'em_andamento' });
     assert.equal(r.json.startDate, todayLocal());

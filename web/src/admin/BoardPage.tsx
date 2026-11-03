@@ -9,6 +9,7 @@ import {
   ArrowUpToLine,
   CalendarClock,
   EyeOff,
+  Hourglass,
   Link2,
   MapPin,
   MapPinOff,
@@ -23,6 +24,7 @@ import {
   X,
 } from 'lucide-react';
 import { GROUPS, STATUSES, STATUS_LABEL } from '@shared/status';
+import { DependencyChip } from '@shared/dependency';
 import { formatDayShort, pct, todayISO } from '@shared/format';
 import type { Status } from '@shared/types';
 import { api } from './api';
@@ -51,6 +53,7 @@ export function BoardPage() {
   const [people, setPeople] = useState<string[]>([]);
   const [onlyUnmapped, setOnlyUnmapped] = useState(false);
   const [onlyHidden, setOnlyHidden] = useState(false);
+  const [onlyDependent, setOnlyDependent] = useState(false);
   const [creating, setCreating] = useState<Status | null>(null);
   const [importing, setImporting] = useState(false);
   const [importingAi, setImportingAi] = useState(false);
@@ -64,7 +67,7 @@ export function BoardPage() {
     return [...count.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
   }, [all]);
 
-  const filtering = !!(search.trim() || category || people.length || onlyUnmapped || onlyHidden);
+  const filtering = !!(search.trim() || category || people.length || onlyUnmapped || onlyHidden || onlyDependent);
   const columns = useMemo(() => {
     const q = search.trim().toLowerCase();
     const visible = all.filter(
@@ -73,10 +76,11 @@ export function BoardPage() {
         (!people.length || people.includes(t.responsibleName)) &&
         (!onlyUnmapped || t.posX == null) &&
         (!onlyHidden || !t.isPublic) &&
+        (!onlyDependent || t.dependency !== 'nenhuma') &&
         (!q || `${taskKey(t)} ${t.title} ${t.responsibleName} ${t.category}`.toLowerCase().includes(q)),
     );
     return STATUSES.map((s) => ({ ...s, items: visible.filter((t) => t.status === s.key).sort((a, b) => a.position - b.position) }));
-  }, [all, search, category, people, onlyUnmapped, onlyHidden]);
+  }, [all, search, category, people, onlyUnmapped, onlyHidden, onlyDependent]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -164,6 +168,7 @@ export function BoardPage() {
     setPeople([]);
     setOnlyUnmapped(false);
     setOnlyHidden(false);
+    setOnlyDependent(false);
   };
 
   const demoCount = all.filter((t) => t.isDemo).length;
@@ -234,6 +239,9 @@ export function BoardPage() {
         )}
         <FilterChip active={onlyUnmapped} onClick={() => setOnlyUnmapped((v) => !v)} icon={<MapPinOff className="size-3.5" />}>
           Sem local no mapa
+        </FilterChip>
+        <FilterChip active={onlyDependent} onClick={() => setOnlyDependent((v) => !v)} icon={<Hourglass className="size-3.5" />}>
+          Dependem de terceiros
         </FilterChip>
         <FilterChip active={onlyHidden} onClick={() => setOnlyHidden((v) => !v)} icon={<EyeOff className="size-3.5" />}>
           Ocultos do site
@@ -387,8 +395,9 @@ function TaskCard({ task: t, dragging, menu }: { task: TaskSummary; dragging: bo
         <span className="mt-[5px] size-2 shrink-0 rounded-full" style={{ background: group.color }} />
         <h3 className="line-clamp-3 text-sm leading-snug font-semibold text-slate-800">{t.title}</h3>
       </div>
-      {(t.category || t.isDemo) && (
+      {(t.category || t.isDemo || t.dependency !== 'nenhuma') && (
         <div className="mt-2 flex flex-wrap gap-1 pl-4">
+          <DependencyChip dependency={t.dependency} note={t.dependencyNote} compact />
           {t.category && <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">{t.category}</span>}
           {t.isDemo && <span className="rounded-md bg-sky-50 px-1.5 py-0.5 text-[11px] font-medium text-sky-700">demo</span>}
         </div>

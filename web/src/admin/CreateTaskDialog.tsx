@@ -5,7 +5,8 @@ import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { X } from 'lucide-react';
 import { GROUPS, STATUSES } from '@shared/status';
-import type { Status } from '@shared/types';
+import { DEPENDENCIES } from '@shared/dependency';
+import type { Dependency, Status } from '@shared/types';
 import { api } from './api';
 import { PRIORITIES } from './priority';
 import type { Priority } from './types';
@@ -19,6 +20,8 @@ export function CreateTaskDialog({ initialStatus = 'ideia', categories, onClose 
   const [title, setTitle] = useState('');
   const [status, setStatus] = useState<Status>(initialStatus);
   const [priority, setPriority] = useState<Priority>('media');
+  const [dependency, setDependency] = useState<Dependency>('nenhuma');
+  const [dependencyNote, setDependencyNote] = useState('');
   const [category, setCategory] = useState('');
   const [responsibleName, setResponsibleName] = useState('');
   const [description, setDescription] = useState('');
@@ -31,7 +34,7 @@ export function CreateTaskDialog({ initialStatus = 'ideia', categories, onClose 
   }, [onClose]);
 
   const create = useMutation({
-    mutationFn: () => api.createTask({ title: title.trim(), status, priority, category: category.trim(), responsibleName: responsibleName.trim(), description }),
+    mutationFn: () => api.createTask({ title: title.trim(), status, priority, dependency, dependencyNote: dependency === 'nenhuma' ? '' : dependencyNote, category: category.trim(), responsibleName: responsibleName.trim(), description }),
     onSuccess: (d) => {
       qc.setQueryData(['task', d.id], d);
       qc.invalidateQueries({ queryKey: ['tasks'] });
@@ -94,6 +97,24 @@ export function CreateTaskDialog({ initialStatus = 'ideia', categories, onClose 
                 ))}
               </select>
             </label>
+            <label className="block">
+              <Label>Dependência</Label>
+              <select value={dependency} onChange={(e) => setDependency(e.target.value as Dependency)} className={inputCls}>
+                {DEPENDENCIES.map((d) => (
+                  <option key={d.key} value={d.key}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {dependency !== 'nenhuma' ? (
+              <label className="block">
+                <Label>De quem?</Label>
+                <input value={dependencyNote} onChange={(e) => setDependencyNote(e.target.value)} maxLength={120} placeholder="Ex.: PROGRAD, DIOPI" className={inputCls} />
+              </label>
+            ) : (
+              <span aria-hidden className="hidden sm:block" />
+            )}
             <label className="block">
               <Label>Categoria</Label>
               <input value={category} onChange={(e) => setCategory(e.target.value)} list="categorias-criar" placeholder="Ex.: Infraestrutura" className={inputCls} />

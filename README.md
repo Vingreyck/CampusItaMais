@@ -15,12 +15,12 @@ Só a planta 3D e o filtro, como pedido:
 - **Quadro** com as colunas *Ideias → A fazer → Em andamento → Em análise → Concluído*. Os cartões se movem arrastando com o mouse ou pelo teclado (Espaço, setas, Espaço). Cada coluna aparece no site com a cor do seu grupo: Ideias e A fazer em 🔴, Em andamento e Em análise em 🟡, Concluído em 🟢.
 - **Cartões** com chave `ITA-n`, prioridade, progresso das subtarefas, anexos, prazo (vermelho se atrasado), responsável e se está no mapa. O menu “…” do cartão traz: abrir, copiar link do site, posicionar no mapa, mover para o topo/fim e excluir.
 - **Criar**: diálogo completo (atalho `C`, opção “Criar outro”) ou criação rápida no pé de cada coluna.
-- **Filtros rápidos**: busca (atalho `/`), responsável (avatares), categoria, “Sem local no mapa”, “Ocultos do site”.
+- **Filtros rápidos**: busca (atalho `/`), responsável (avatares), categoria, “Sem local no mapa”, “Dependem de terceiros”, “Ocultos do site”.
 - **Projeto** (abre em `/admin/tarefa/ITA-n`):
   - Título e descrição (a descrição aparece no site).
   - **Subtarefas**: checklist reordenável por arraste, com descrição, responsável, e-mail, prazo e data em que foi feita.
   - **Documentos**: PDF, fotos e planilhas, cada um público ou privado; uma foto pode ser a capa.
-  - **Detalhes**: responsável, prioridade, categoria e relator.
+  - **Detalhes**: responsável, prioridade, **dependência** (sem dependência, outro setor do campus, Reitoria/UFS ou órgão externo, com o nome de quem em texto livre — aparece como etiqueta roxa no cartão, no relatório e no site público), categoria e relator.
   - **Datas**: início, previsão e conclusão (preenchidas sozinhas ao mover o cartão).
   - **Atividade** com abas **Comentários** (atalho `M`; `Ctrl+Enter` salva) e **Histórico** (cada alteração registrada).
 - **E-mail com Enter**: em projetos e subtarefas, digite um e-mail e pressione Enter. A pessoa recebe a tarefa na hora.
@@ -77,8 +77,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ## Testes
 
 ```bash
-npm test            # API: 69 cenários (porteiro do painel, quadro, subtarefas, documentos, e-mail, mapa, relatório, acessos, importação do Jira, IA com a Groq simulada)
-npm run test:e2e    # navegador: 24 cenários no build de produção (a Groq é simulada por e2e/fake-groq.mjs) (site público e painel, como uma pessoa usaria)
+npm test            # API: 70 cenários (porteiro do painel, quadro, subtarefas, documentos, e-mail, mapa, relatório, acessos, importação do Jira, IA com a Groq simulada)
+npm run test:e2e    # navegador: 25 cenários no build de produção (a Groq é simulada por e2e/fake-groq.mjs) (site público e painel, como uma pessoa usaria)
 ```
 
 No GitHub, os dois rodam sozinhos a cada push (`.github/workflows/ci.yml`).

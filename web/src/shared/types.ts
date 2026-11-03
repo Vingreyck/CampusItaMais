@@ -1,5 +1,6 @@
 export type Status = 'ideia' | 'a_fazer' | 'em_andamento' | 'em_analise' | 'concluido';
 export type PublicGroup = 'planejado' | 'andamento' | 'concluido';
+export type Dependency = 'nenhuma' | 'outro_setor' | 'reitoria' | 'externo';
 
 export interface PublicSubtask {
   id: string;
@@ -26,6 +27,8 @@ export interface PublicProject {
   description: string;
   status: Status;
   category: string;
+  dependency: Dependency;
+  dependencyNote: string;
   responsibleName: string;
   startDate: string | null;
   dueDate: string | null;

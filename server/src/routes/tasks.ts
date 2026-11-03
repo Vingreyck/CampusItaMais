@@ -8,7 +8,7 @@ import { loadTaskDetail, serializeComment, serializeSubtask, serializeTask, task
 import { isImage, removeStoredFile, serializeDocument, fixFileName, upload } from '../uploads';
 import { sendMail } from '../mail';
 import { taskEmail } from '../mail/templates';
-import { formatDateBR, HttpError, notFound, PRIORITIES, PRIORITY_LABEL, STATUSES, statusLabel, todayLocal } from '../util';
+import { DEPENDENCIES, DEPENDENCY_LABEL, formatDateBR, HttpError, notFound, PRIORITIES, PRIORITY_LABEL, STATUSES, statusLabel, todayLocal } from '../util';
 
 // Montado em /api/admin, atrás do adminApiGate.
 export const tasksRouter = Router();
@@ -27,6 +27,8 @@ const taskFields = {
   status: z.enum(STATUSES),
   position: z.number(),
   priority: z.enum(PRIORITIES),
+  dependency: z.enum(DEPENDENCIES),
+  dependencyNote: z.string().transform((s) => s.replace(/\s+/g, ' ').trim()).pipe(z.string().max(120)),
   // Espaços repetidos viram um só (evita categorias "iguais" que o filtro não reconhece).
   category: z.string().transform((s) => s.replace(/\s+/g, ' ').trim()).pipe(z.string().max(80)),
   responsibleName: z.string().trim().max(120),
@@ -144,6 +146,13 @@ tasksRouter.patch('/tasks/:id', async (req, res) => {
   if (data.priority && data.priority !== cur.priority) {
     log('priority', `alterou a prioridade de ${PRIORITY_LABEL[cur.priority as keyof typeof PRIORITY_LABEL] ?? cur.priority} para ${PRIORITY_LABEL[data.priority]}`);
   }
+  if (data.dependency !== undefined && data.dependency !== cur.dependency) {
+    log('dependency', data.dependency === 'nenhuma' ? 'removeu a dependência' : `marcou como: ${DEPENDENCY_LABEL[data.dependency].toLowerCase()}`);
+  } else if (data.dependencyNote !== undefined && data.dependencyNote !== cur.dependencyNote && (data.dependency ?? cur.dependency) !== 'nenhuma') {
+    log('dependency', data.dependencyNote ? `indicou de quem depende: ${data.dependencyNote}` : 'removeu o detalhe da dependência');
+  }
+  // Sem dependência não há "de quem": limpa o detalhe.
+  if ((data.dependency ?? cur.dependency) === 'nenhuma' && (data.dependencyNote ?? cur.dependencyNote)) update.dependencyNote = '';
   if (data.category !== undefined && data.category !== cur.category) {
     log('category', data.category ? `definiu a categoria “${data.category}”` : 'removeu a categoria');
   }

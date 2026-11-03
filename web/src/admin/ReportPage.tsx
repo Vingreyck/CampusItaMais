@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
 import { CalendarRange, Check, Printer } from 'lucide-react';
 import { GROUPS, STATUSES, STATUS_LABEL, groupOf } from '@shared/status';
+import { dependencyMeta } from '@shared/dependency';
 import { formatDateTime, formatDayShort, pct, todayISO } from '@shared/format';
 import { api } from './api';
 import type { Report, TaskWithSubtasks } from './types';
@@ -229,6 +230,7 @@ function TaskBlock({ task: t, meta }: { task: TaskWithSubtasks; meta: string }) 
             <span className="font-semibold text-slate-400">ITA-{t.code}</span> {t.title}
           </p>
           <p className="text-xs text-slate-500">{[t.category, t.responsibleName, meta].filter(Boolean).join(' · ')}</p>
+          {t.dependency !== 'nenhuma' && <p className="text-xs font-medium text-violet-700">{[dependencyMeta(t.dependency).label, t.dependencyNote].filter(Boolean).join(' · ')}</p>}
         </div>
         {t.subtasks.length > 0 && (
           <span className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-600 tabular-nums">

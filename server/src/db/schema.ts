@@ -45,6 +45,9 @@ export const tasks = pgTable(
     position: doublePrecision('position').notNull().default(0),
     // mais_alta | alta | media | baixa | mais_baixa (mesma escala do Jira)
     priority: text('priority').notNull().default('media'),
+    // nenhuma | outro_setor | reitoria | externo — de quem depende o andamento (diferente de prioridade)
+    dependency: text('dependency').notNull().default('nenhuma'),
+    dependencyNote: text('dependency_note').notNull().default(''),
     category: text('category').notNull().default(''),
     responsibleName: text('responsible_name').notNull().default(''),
     responsibleEmail: text('responsible_email').notNull().default(''),

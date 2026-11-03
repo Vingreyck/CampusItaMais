@@ -199,6 +199,49 @@ test('ficha do projeto: subtarefas, data feita, responsável, e-mail com Enter, 
   await expect(column(page, 'Em análise')).toContainText(TITLE);
 });
 
+test('dependência: marcar "depende da Reitoria", ver no cartão, filtrar e limpar', async ({ page }) => {
+  await enter(page);
+  await card(page, TITLE).click();
+  const dialog = page.getByRole('dialog', { name: /ITA-15/ });
+  const side = dialog.locator('aside');
+  await expect(side.getByLabel('Dependência')).toHaveValue('nenhuma');
+  await expect(side.getByLabel('De quem depende')).toHaveCount(0);
+
+  await side.getByLabel('Dependência').selectOption('reitoria');
+  const note = side.getByLabel('De quem depende');
+  await note.fill('PROGRAD e DIOPI');
+  await note.press('Enter');
+  await expect(side.getByLabel('Prioridade', { exact: true })).toHaveValue('mais_alta'); // a prioridade não muda
+  await dialog.getByRole('tab', { name: 'Histórico' }).click();
+  await expect(dialog.getByText('marcou como: depende da reitoria / ufs')).toBeVisible();
+  await expect(dialog.getByText('indicou de quem depende: PROGRAD e DIOPI')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.keyboard.press('Escape');
+  await expect(page).toHaveURL(/\/admin\/?$/);
+
+  const c = card(page, TITLE);
+  await expect(c.getByText('Reitoria / UFS')).toBeVisible();
+  await expect(c.getByTitle('Depende da Reitoria / UFS · PROGRAD e DIOPI')).toBeVisible();
+
+  const total = await page.locator('[data-rfd-draggable-id]').count();
+  await page.getByRole('button', { name: 'Dependem de terceiros' }).click();
+  await expect(page.locator('[data-rfd-draggable-id]')).toHaveCount(1);
+  await page.getByRole('button', { name: 'Limpar filtros' }).click();
+  await expect(page.locator('[data-rfd-draggable-id]')).toHaveCount(total);
+
+  // Criar já com dependência pelo diálogo
+  await page.getByRole('button', { name: 'Criar', exact: true }).first().click();
+  const form = page.getByRole('form', { name: 'Criar projeto' });
+  await form.getByLabel('Título *').fill('Nasce dependente E2E');
+  await form.getByLabel('Dependência').selectOption('externo');
+  await form.getByLabel('De quem?').fill('Prefeitura');
+  await form.getByRole('button', { name: 'Criar' }).click();
+  await expect(card(page, 'Nasce dependente E2E').getByText('Órgão externo')).toBeVisible();
+  const made = (await (await page.request.get('/api/admin/tasks')).json()).find((t: { title: string }) => t.title === 'Nasce dependente E2E');
+  expect([made.dependency, made.dependencyNote]).toEqual(['externo', 'Prefeitura']);
+  await page.request.delete(`/api/admin/tasks/${made.id}`, { headers: { 'X-CIM-Admin': '1' } });
+});
+
 test('mapa: arrastar a bolinha do projeto até o ponto do campus', async ({ page }) => {
   await enter(page);
   await page.getByRole('link', { name: 'Mapa do campus' }).click();
@@ -239,6 +282,7 @@ test('o site público mostra o projeto novo na cor amarela, com checklist e capa
   await expect(panel.getByText('Escolher o local')).toBeVisible();
   await expect(panel.locator('img').first()).toBeVisible(); // capa
   await expect(panel.getByText('Maria Souza')).toBeVisible();
+  await expect(panel.getByTitle('Depende da Reitoria / UFS · PROGRAD e DIOPI')).toBeVisible(); // de quem depende aparece no site
   // Nada interno vaza para o visitante
   await expect(page.getByText('maria@ufs.br')).toHaveCount(0);
   await expect(page.getByText('diretor@exemplo.com')).toHaveCount(0);

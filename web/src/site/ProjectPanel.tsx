@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import { motion } from 'motion/react';
 import { Calendar, CalendarCheck, Check, ChevronLeft, ChevronRight, FileText, Link2, MapPinOff, Play, User, X } from 'lucide-react';
 import { GROUPS, groupOf, STATUS_LABEL } from '@shared/status';
+import { DependencyChip } from '@shared/dependency';
 import { formatBytes, formatDay, pct } from '@shared/format';
 import type { PublicProject } from '@shared/types';
 
@@ -112,6 +113,11 @@ export function ProjectPanel({ project: p, desktop, onClose, onPrev, onNext }: P
       <div className="scroll-thin flex-1 overflow-y-auto px-6 pt-3 pb-6">
         {p.category && <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{p.category}</p>}
         <h2 className="mt-1 text-[26px] leading-[1.15] font-extrabold tracking-tight text-balance text-slate-900">{p.title}</h2>
+        {p.dependency !== 'nenhuma' && (
+          <p className="mt-2.5">
+            <DependencyChip dependency={p.dependency} note={p.dependencyNote} />
+          </p>
+        )}
 
         {(total > 0 || p.status === 'concluido') && (
           <div className="mt-5 flex items-center gap-4 rounded-3xl bg-white/70 p-4 ring-1 ring-slate-900/5">

@@ -6,8 +6,9 @@ import clsx from 'clsx';
 import { toast } from 'sonner';
 import { ChevronRight, ExternalLink, Link2, MapPin, MapPinOff, MessageSquare, MoreHorizontal, Send, Trash2, X } from 'lucide-react';
 import { GROUPS, STATUSES, groupOf } from '@shared/status';
+import { DEPENDENCIES } from '@shared/dependency';
 import { formatDateTime } from '@shared/format';
-import type { Status } from '@shared/types';
+import type { Dependency, Status } from '@shared/types';
 import { api, useTaskPatch } from './api';
 import { taskKey } from './BoardPage';
 import { Comments } from './Comments';
@@ -287,6 +288,30 @@ function TaskEditor({ task, onClose }: { task: TaskDetail; onClose: () => void }
                     ))}
                   </select>
                 </span>
+              </Field>
+              <Field label="Dependência">
+                <select
+                  value={task.dependency}
+                  onChange={(e) => patch.mutate({ dependency: e.target.value as Dependency })}
+                  aria-label="Dependência"
+                  className="h-9 w-full rounded-xl bg-white px-3 text-sm text-slate-800 ring-1 ring-slate-200 outline-none focus:ring-2 focus:ring-sky-400/70"
+                >
+                  {DEPENDENCIES.map((d) => (
+                    <option key={d.key} value={d.key}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
+                {task.dependency !== 'nenhuma' && (
+                  <CommitInput
+                    value={task.dependencyNote}
+                    onCommit={(v) => patch.mutate({ dependencyNote: v.trim() })}
+                    placeholder="De quem? Ex.: PROGRAD, DIOPI"
+                    aria-label="De quem depende"
+                    maxLength={120}
+                    className="mt-2"
+                  />
+                )}
               </Field>
               <Field label="Categoria">
                 <CommitInput value={task.category} onCommit={(v) => patch.mutate({ category: v.trim() })} list="categorias" placeholder="Ex.: Infraestrutura" aria-label="Categoria" />

@@ -1,4 +1,4 @@
-import type { Status } from '@shared/types';
+import type { Dependency, Status } from '@shared/types';
 
 export type Priority = 'mais_alta' | 'alta' | 'media' | 'baixa' | 'mais_baixa';
 
@@ -17,6 +17,8 @@ export interface TaskSummary {
   status: Status;
   position: number;
   priority: Priority;
+  dependency: Dependency;
+  dependencyNote: string;
   category: string;
   responsibleName: string;
   responsibleEmail: string;
