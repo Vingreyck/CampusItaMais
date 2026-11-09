@@ -21,6 +21,8 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     locale: 'pt-BR',
     timezoneId: 'America/Maceio',
+    // O 3D sem placa de vídeo é pesado: a suíte roda com "reduzir movimento" (o site respeita isso). O modo normal tem teste próprio.
+    reducedMotion: 'reduce',
     viewport: { width: 1440, height: 900 },
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',

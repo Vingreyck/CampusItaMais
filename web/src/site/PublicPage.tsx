@@ -15,6 +15,8 @@ export function PublicPage() {
   const navigate = useNavigate();
   const desktop = useMediaQuery('(min-width: 768px)');
   const highQuality = useMediaQuery('(min-width: 900px)');
+  // "Reduzir movimento" (preferência do sistema): sem giro automático, sem animação de entrada e sem efeitos pesados.
+  const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const { projects, error } = useProjects();
   const [filter, setFilter] = useState<PublicGroup | null>(null);
 
@@ -84,9 +86,10 @@ export function PublicPage() {
         focus={focus}
         onSelect={select}
         panelSide={selected ? (desktop ? 'right' : 'bottom') : null}
-        autoRotate
-        intro
-        effects={highQuality}
+        autoRotate={!reduceMotion}
+        intro={!reduceMotion}
+        effects={highQuality && !reduceMotion}
+        reduceMotion={reduceMotion}
       />
 
       {/* Identificação discreta */}

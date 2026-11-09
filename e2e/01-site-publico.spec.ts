@@ -101,3 +101,15 @@ test.describe('site público', () => {
     await expect(filter(page)).toHaveCount(0); // o filtro dá lugar ao painel
   });
 });
+
+test.describe('com animações (modo normal, sem "reduzir movimento")', () => {
+  test.use({ reducedMotion: 'no-preference' });
+  test('o campus abre com os efeitos completos e o filtro funciona', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('canvas')).toBeVisible();
+    const dot = filter(page).getByRole('button', { name: 'Em andamento: 4 projeto(s)' });
+    await dot.click();
+    await expect(dot).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('button', { name: /Reforma e ampliação da Biblioteca/ })).toBeVisible();
+  });
+});

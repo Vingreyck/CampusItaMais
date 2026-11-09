@@ -36,6 +36,8 @@ interface CampusSceneProps {
   panelSide?: 'right' | 'bottom' | null;
   autoRotate?: boolean;
   intro?: boolean;
+  /** Câmera troca de lugar instantaneamente (preferência "reduzir movimento"). */
+  reduceMotion?: boolean;
   interactive?: boolean;
   buildingLabels?: boolean;
   effects?: boolean;
@@ -58,6 +60,7 @@ export function CampusScene({
   panelSide = null,
   autoRotate = false,
   intro = false,
+  reduceMotion = false,
   interactive = true,
   buildingLabels = true,
   effects = true,
@@ -117,7 +120,7 @@ export function CampusScene({
           ref={controls}
           makeDefault
           enabled={interactive}
-          smoothTime={0.75}
+          smoothTime={reduceMotion ? 0.01 : 0.75}
           minDistance={18}
           maxDistance={560}
           maxPolarAngle={view === 'top' ? 0.02 : Math.PI * 0.44}

@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { request } from '@shared/http';
 import type { Status } from '@shared/types';
-import type { AccessKey, CommentItem, DocumentItem, Me, NotificationItem, Priority, Report, Subtask, TaskDetail, TaskSummary } from './types';
+import type { AccessKey, CommentItem, DocumentItem, Impediment, ImpedimentDetail, Me, NotificationItem, Priority, Report, Subtask, TaskDetail, TaskSummary } from './types';
 
 // Cabeçalho exigido pelo servidor em toda alteração (proteção contra CSRF).
 const ADMIN_HEADERS = { 'X-CIM-Admin': '1' };
@@ -29,6 +29,9 @@ export type TaskPatch = Partial<
     | 'posZ'
     | 'coverDocumentId'
   >
+>;
+export type ImpedimentPatch = Partial<
+  Pick<Impediment, 'title' | 'description' | 'category' | 'impact' | 'responsibleName' | 'measure' | 'dueDate' | 'status' | 'taskId' | 'actionText'>
 >;
 export type SubtaskPatch = Partial<Omit<Subtask, 'id' | 'taskId'>>;
 type KeyResult = { key: AccessKey; link: string; emailStatus: 'sent' | 'failed' | 'simulated' | null };
@@ -164,6 +167,11 @@ export const api = {
         subtasks: i.subtasks,
       })),
     }),
+
+  impediments: () => call<Impediment[]>('GET', '/impediments'),
+  impediment: (id: string) => call<ImpedimentDetail>('GET', `/impediments/${id}`),
+  createImpediment: (data: ImpedimentPatch & { title: string }) => call<ImpedimentDetail>('POST', '/impediments', data),
+  updateImpediment: (id: string, data: ImpedimentPatch) => call<ImpedimentDetail>('PATCH', `/impediments/${id}`, data),
 
   keys: () => call<AccessKey[]>('GET', '/acessos'),
   createKey: (data: { name: string; email: string; sendEmail: boolean }) => call<KeyResult>('POST', '/acessos', data),

@@ -26,6 +26,10 @@ Só a planta 3D e o filtro, como pedido:
 - **E-mail com Enter**: em projetos e subtarefas, digite um e-mail e pressione Enter. A pessoa recebe a tarefa na hora.
 - **Mapa do campus**: arraste a bolinha de um projeto da lista até o ponto do campus; no mapa, arraste as bolinhas para ajustar (vista “Planta” ou “3D”).
 - **Relatório** por período (com atalhos) pronto para **imprimir/salvar em PDF**: projetos e etapas concluídos, em andamento, novas ideias e histórico de ações.
+- **Mapeamento de impedimentos** (menu “Impedimentos”): registra os obstáculos que dificultam ou impedem a execução das ações do Plano de Gestão. Cada impedimento tem: **ação vinculada** (escolhida entre as ações já cadastradas, para não duplicar informação; ou o eixo em texto livre), descrição do problema, **categoria** (financeiro, estrutural, administrativo, operacional, outros), **impacto** (baixo, médio, alto), responsável, **providência necessária**, **prazo** e **situação** (em análise, em resolução, resolvido).
+  - Painel de indicadores (total, por situação, impacto alto em aberto e prazo vencido; clicar filtra a lista), busca por nome ou descrição, filtros por impacto e categoria, edição e troca rápida de situação.
+  - Identificação visual: faixa e etiqueta coloridas por situação, barras de impacto e selo “Atrasado”. Resolvidos vão para o fim da lista.
+  - Cada mudança fica no **histórico** do impedimento. **Não há exclusão**: os registros ficam guardados como histórico institucional (se a ação vinculada for excluída, o impedimento permanece). Os impedimentos são internos e **nunca aparecem no site público**.
 - **Acessos**: gera, regenera e revoga os links-chave das pessoas.
 - **Importar com IA** (botão no quadro): cole ou dite um texto, envie um arquivo (PDF, Word, Excel, CSV, texto) ou grave a voz. A IA gratuita da **Groq** propõe ações novas e atualizações de ações que já existem (situação, prioridade, subtarefas). Você confere a **prévia**, desmarca o que não quiser e confirma.
   - O texto de PDF/Word/Excel é extraído no servidor, sem IA. **E-mails, telefones, CPF e CNPJ são trocados por marcadores antes de sair do servidor** e voltam depois. O áudio não é guardado.
@@ -77,8 +81,8 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ## Testes
 
 ```bash
-npm test            # API: 70 cenários (porteiro do painel, quadro, subtarefas, documentos, e-mail, mapa, relatório, acessos, importação do Jira, IA com a Groq simulada)
-npm run test:e2e    # navegador: 25 cenários no build de produção (a Groq é simulada por e2e/fake-groq.mjs) (site público e painel, como uma pessoa usaria)
+npm test            # API: 78 cenários (porteiro do painel, quadro, subtarefas, documentos, e-mail, mapa, relatório, acessos, importação do Jira, IA com a Groq simulada)
+npm run test:e2e    # navegador: 31 cenários no build de produção (a Groq é simulada por e2e/fake-groq.mjs) (site público e painel, como uma pessoa usaria)
 ```
 
 No GitHub, os dois rodam sozinhos a cada push (`.github/workflows/ci.yml`).

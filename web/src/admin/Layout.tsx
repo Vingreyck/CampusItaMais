@@ -1,13 +1,14 @@
 import { NavLink, Outlet } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import clsx from 'clsx';
-import { ExternalLink, FileBarChart, KeyRound, LogOut, Map, SquareKanban } from 'lucide-react';
+import { ExternalLink, FileBarChart, KeyRound, LogOut, Map, OctagonAlert, SquareKanban } from 'lucide-react';
 import { api } from './api';
 import { Avatar, Spinner } from './ui';
 
 const NAV = [
   { to: '/', label: 'Quadro', icon: SquareKanban, end: true },
   { to: '/mapa', label: 'Mapa do campus', icon: Map },
+  { to: '/impedimentos', label: 'Impedimentos', icon: OctagonAlert },
   { to: '/relatorio', label: 'Relatório', icon: FileBarChart },
   { to: '/acessos', label: 'Acessos', icon: KeyRound },
 ];

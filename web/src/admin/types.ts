@@ -132,3 +132,30 @@ export interface Report {
   planned: TaskWithSubtasks[];
   activities: (Activity & { taskId: string; taskTitle: string; taskCode: number })[];
 }
+
+export type ImpCategory = 'financeiro' | 'estrutural' | 'administrativo' | 'operacional' | 'outros';
+export type ImpImpact = 'baixo' | 'medio' | 'alto';
+export type ImpStatus = 'em_analise' | 'em_resolucao' | 'resolvido';
+
+export interface Impediment {
+  id: string;
+  code: number;
+  title: string;
+  description: string;
+  category: ImpCategory;
+  impact: ImpImpact;
+  responsibleName: string;
+  measure: string;
+  dueDate: string | null;
+  status: ImpStatus;
+  resolvedAt: string | null;
+  taskId: string | null;
+  actionText: string;
+  task: { id: string; code: number; title: string; category: string } | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ImpedimentDetail extends Impediment {
+  events: { id: string; message: string; userName: string; createdAt: string }[];
+}

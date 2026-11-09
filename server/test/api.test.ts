@@ -1167,6 +1167,133 @@ describe('IA — importação com Groq (API simulada)', () => {
   });
 });
 
+// ------------------------------------------------------------------ mapeamento de impedimentos
+describe('mapeamento de impedimentos', () => {
+  let action: { id: string; code: number };
+  let impId = '';
+  const EVENTS = (d: any) => d.events.map((e: any) => e.message) as string[];
+
+  before(async () => {
+    action = (await admin.post('/api/admin/tasks', { title: 'Reforma elétrica do bloco B', category: 'Infraestrutura' })).json;
+  });
+
+  test('só quem tem sessão do painel enxerga e mexe nos impedimentos', async () => {
+    for (const [m, url] of [['GET', '/api/admin/impediments'], ['POST', '/api/admin/impediments'], ['PATCH', '/api/admin/impediments/x']] as const) {
+      const r = await anon.req(m, url, m === 'GET' ? undefined : { title: 'x' });
+      assert.equal(r.status, 404, url);
+      assert.deepEqual(r.json, NOT_FOUND);
+    }
+  });
+
+  test('registra com padrões sensatos e abre o histórico', async () => {
+    const r = await admin.post('/api/admin/impediments', { title: '  Falta de verba para a reforma  ' });
+    assert.equal(r.status, 201, JSON.stringify(r.json));
+    assert.equal(r.json.title, 'Falta de verba para a reforma');
+    assert.deepEqual([r.json.category, r.json.impact, r.json.status], ['outros', 'medio', 'em_analise']);
+    assert.ok(r.json.code > 0);
+    assert.equal(r.json.task, null);
+    assert.equal(r.json.resolvedAt, null);
+    assert.deepEqual(EVENTS(r.json), ['registrou o impedimento (em análise)']);
+  });
+
+  test('valida os campos do formulário', async () => {
+    const bads = [
+      { title: '   ' },
+      { title: 'x', category: 'politico' },
+      { title: 'x', impact: 'enorme' },
+      { title: 'x', status: 'feito' },
+      { title: 'x', dueDate: '31/12/2026' },
+      { title: 'x', taskId: 'nao-e-uuid' },
+      { title: 'x'.repeat(201) },
+    ];
+    for (const body of bads) assert.equal((await admin.post('/api/admin/impediments', body)).status, 400, JSON.stringify(body).slice(0, 50));
+    const ghost = await admin.post('/api/admin/impediments', { title: 'x', taskId: '00000000-0000-4000-8000-000000000000' });
+    assert.equal(ghost.status, 400);
+    assert.match(ghost.json.error, /ação vinculada/);
+  });
+
+  test('cadastro completo vinculado a uma ação existente, sem duplicar informação', async () => {
+    const r = await admin.post('/api/admin/impediments', {
+      title: 'Orçamento da obra não aprovado',
+      description: 'A reitoria ainda não liberou o recurso.',
+      category: 'financeiro',
+      impact: 'alto',
+      responsibleName: 'Coordenação de Infraestrutura',
+      measure: 'Reunião com a PROAD para priorizar o empenho.',
+      dueDate: '2026-12-20',
+      status: 'em_resolucao',
+      taskId: action.id,
+      actionText: 'Infraestrutura',
+    });
+    assert.equal(r.status, 201, JSON.stringify(r.json));
+    impId = r.json.id;
+    assert.deepEqual([r.json.category, r.json.impact, r.json.status, r.json.dueDate], ['financeiro', 'alto', 'em_resolucao', '2026-12-20']);
+    assert.equal(r.json.measure, 'Reunião com a PROAD para priorizar o empenho.');
+    assert.equal(r.json.actionText, '', 'texto livre descartado: já há ação vinculada');
+    assert.deepEqual(r.json.task, { id: action.id, code: action.code, title: 'Reforma elétrica do bloco B', category: 'Infraestrutura' });
+
+    const list = (await admin.get('/api/admin/impediments')).json;
+    const item = list.find((i: any) => i.id === impId);
+    assert.equal(item.task.code, action.code, 'a listagem já traz a ação vinculada');
+    assert.ok(list.length >= 2);
+  });
+
+  test('sem ação cadastrada, guarda o texto livre (ex.: o eixo)', async () => {
+    const r = await admin.post('/api/admin/impediments', { title: 'Internet instável', actionText: '  Infraestrutura  ', category: 'operacional' });
+    assert.equal(r.json.actionText, 'Infraestrutura');
+    assert.equal(r.json.task, null);
+  });
+
+  test('editar: situação, resolução automática, impacto, vínculo e prazo — tudo no histórico', async () => {
+    let r = await admin.patch(`/api/admin/impediments/${impId}`, { status: 'resolvido' });
+    assert.equal(r.json.status, 'resolvido');
+    assert.equal(r.json.resolvedAt, todayLocal());
+    r = await admin.patch(`/api/admin/impediments/${impId}`, { status: 'em_analise', impact: 'medio', dueDate: '2027-01-15', responsibleName: 'Direção' });
+    assert.equal(r.json.resolvedAt, null, 'reabrir limpa a data de resolução');
+    assert.deepEqual([r.json.status, r.json.impact, r.json.dueDate, r.json.responsibleName], ['em_analise', 'medio', '2027-01-15', 'Direção']);
+
+    // Já vinculado: texto livre é ignorado; trocar o vínculo e remover funcionam
+    r = await admin.patch(`/api/admin/impediments/${impId}`, { actionText: 'Texto solto' });
+    assert.equal(r.json.actionText, '');
+    r = await admin.patch(`/api/admin/impediments/${impId}`, { taskId: null, actionText: 'Eixo 1 — Infraestrutura' });
+    assert.deepEqual([r.json.task, r.json.actionText], [null, 'Eixo 1 — Infraestrutura']);
+    r = await admin.patch(`/api/admin/impediments/${impId}`, { taskId: action.id });
+    assert.equal(r.json.task.code, action.code);
+    assert.equal(r.json.actionText, '');
+
+    const msgs = EVENTS(r.json);
+    for (const m of [
+      'registrou o impedimento (em resolução)',
+      'mudou a situação de “Em resolução” para “Resolvido”',
+      'mudou a situação de “Resolvido” para “Em análise”',
+      'alterou o impacto de alto para médio',
+      'alterou o prazo para 15/01/2027',
+      'definiu Direção como responsável',
+      'removeu o vínculo com a ação',
+      `vinculou à ação ITA-${action.code}`,
+    ]) assert.ok(msgs.includes(m), `histórico sem: ${m}\n${msgs.join('\n')}`);
+    assert.equal((await admin.patch(`/api/admin/impediments/${impId}`, { impact: 'gigante' })).status, 400);
+    assert.equal((await admin.patch('/api/admin/impediments/00000000-0000-4000-8000-000000000000', { impact: 'baixo' })).status, 404);
+  });
+
+  test('o registro permanece mesmo se a ação for excluída; não existe exclusão de impedimento', async () => {
+    const temp = (await admin.post('/api/admin/tasks', { title: 'Ação temporária de teste' })).json;
+    const imp = (await admin.post('/api/admin/impediments', { title: 'Impedimento da ação temporária', taskId: temp.id })).json;
+    assert.equal((await admin.del(`/api/admin/tasks/${temp.id}`)).status, 200);
+    const after = (await admin.get(`/api/admin/impediments/${imp.id}`)).json;
+    assert.equal(after.title, 'Impedimento da ação temporária');
+    assert.deepEqual([after.taskId, after.task], [null, null]);
+    assert.equal((await admin.del(`/api/admin/impediments/${imp.id}`)).status, 404, 'sem rota de exclusão');
+    assert.equal((await admin.get(`/api/admin/impediments/${imp.id}`)).status, 200);
+  });
+
+  test('impedimentos nunca vazam para o site público', async () => {
+    const raw = (await anon.get('/api/public/projects')).text;
+    assert.ok(!/Orçamento da obra|Falta de verba|Internet instável|impediment/i.test(raw));
+    assert.equal((await anon.get('/api/public/impediments')).status, 404);
+  });
+});
+
 // ------------------------------------------------------------------ exclusão
 describe('exclusão de projeto', () => {
   test('apaga subtarefas, comentários e arquivos do projeto', async () => {

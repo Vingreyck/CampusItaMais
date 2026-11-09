@@ -41,6 +41,23 @@ export const DEPENDENCY_LABEL: Record<Dependency, string> = {
   externo: 'Depende de órgão externo ou parceiro',
 };
 
+export const IMPEDIMENT_CATEGORIES = ['financeiro', 'estrutural', 'administrativo', 'operacional', 'outros'] as const;
+export const IMPEDIMENT_IMPACTS = ['baixo', 'medio', 'alto'] as const;
+export const IMPEDIMENT_STATUSES = ['em_analise', 'em_resolucao', 'resolvido'] as const;
+export const IMPEDIMENT_LABEL: Record<string, string> = {
+  financeiro: 'Financeiro',
+  estrutural: 'Estrutural',
+  administrativo: 'Administrativo',
+  operacional: 'Operacional',
+  outros: 'Outros',
+  baixo: 'Baixo',
+  medio: 'Médio',
+  alto: 'Alto',
+  em_analise: 'Em análise',
+  em_resolucao: 'Em resolução',
+  resolvido: 'Resolvido',
+};
+
 export const PRIORITIES = ['mais_alta', 'alta', 'media', 'baixa', 'mais_baixa'] as const;
 export type Priority = (typeof PRIORITIES)[number];
 export const PRIORITY_LABEL: Record<Priority, string> = {

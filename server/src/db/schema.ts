@@ -167,6 +167,52 @@ export const appMeta = pgTable('app_meta', {
   value: text('value').notNull(),
 });
 
+/**
+ * Mapeamento de impedimentos: obstáculos que dificultam ou impedem a execução das ações do Plano de Gestão.
+ * Ficam guardados para sempre (não há exclusão): resolvidos viram histórico institucional.
+ */
+export const impediments = pgTable(
+  'impediments',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    code: serial('code').notNull(),
+    // Ação do plano afetada. Se a ação for excluída, o impedimento permanece (task_id fica vazio).
+    taskId: uuid('task_id').references(() => tasks.id, { onDelete: 'set null' }),
+    // Texto livre para quando não há ação cadastrada (ex.: o eixo "Infraestrutura").
+    actionText: text('action_text').notNull().default(''),
+    title: text('title').notNull(),
+    description: text('description').notNull().default(''),
+    // financeiro | estrutural | administrativo | operacional | outros
+    category: text('category').notNull().default('outros'),
+    // baixo | medio | alto
+    impact: text('impact').notNull().default('medio'),
+    responsibleName: text('responsible_name').notNull().default(''),
+    measure: text('measure').notNull().default(''),
+    dueDate: date('due_date'),
+    // em_analise | em_resolucao | resolvido
+    status: text('status').notNull().default('em_analise'),
+    resolvedAt: date('resolved_at'),
+    createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index('impediments_status_idx').on(t.status), index('impediments_task_idx').on(t.taskId)],
+);
+
+export const impedimentEvents = pgTable(
+  'impediment_events',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    impedimentId: uuid('impediment_id')
+      .notNull()
+      .references(() => impediments.id, { onDelete: 'cascade' }),
+    message: text('message').notNull(),
+    userName: text('user_name').notNull().default(''),
+    createdAt: createdAt(),
+  },
+  (t) => [index('impediment_events_idx').on(t.impedimentId)],
+);
+
 export type TaskRow = typeof tasks.$inferSelect;
 export type SubtaskRow = typeof subtasks.$inferSelect;
 export type DocumentRow = typeof documents.$inferSelect;

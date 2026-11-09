@@ -9,6 +9,7 @@ import { BoardPage } from './BoardPage';
 import { TaskModal } from './TaskModal';
 import { MapPage } from './MapPage';
 import { ReportPage } from './ReportPage';
+import { ImpedimentsPage } from './ImpedimentsPage';
 import { AccessPage } from './AccessPage';
 
 // Sessão expirada/revogada: a API passa a responder 404 e o painel some — volta para o site público.
@@ -37,6 +38,7 @@ createRoot(document.getElementById('root')!).render(
             <Route path="tarefa/:taskId" element={<TaskModal />} />
           </Route>
           <Route path="mapa" element={<MapPage />} />
+          <Route path="impedimentos" element={<ImpedimentsPage />} />
           <Route path="relatorio" element={<ReportPage />} />
           <Route path="acessos" element={<AccessPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
